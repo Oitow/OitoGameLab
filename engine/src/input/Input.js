@@ -7,6 +7,10 @@ export class Input {
     this.touch = new THREE.Vector2();
     this.keys = new Set();
     this.pointerId = null;
+    this.jumpQueued = false;
+    this.jumpButton = document.querySelector('#jump');
+    this.onJump = e => { e.preventDefault(); this.jumpQueued = true; };
+    this.jumpButton.addEventListener('pointerdown', this.onJump);
     this.onDown = e => {
       if (this.pointerId !== null) return;
       this.pointerId = e.pointerId;
@@ -22,6 +26,7 @@ export class Input {
     };
     this.onKeyDown = e => {
       const k = e.key.toLowerCase();
+      if ((k === ' ' || k === 'spacebar') && !e.repeat) { this.jumpQueued = true; e.preventDefault(); }
       this.keys.add(k);
       if (k.startsWith('arrow')) e.preventDefault();
     };
@@ -53,7 +58,9 @@ export class Input {
     this.direction.set(x, -y);
     if (this.direction.lengthSq() > 1) this.direction.normalize();
   }
+  consumeJump() { const value = this.jumpQueued; this.jumpQueued = false; return value; }
   dispose() {
+    this.jumpButton.removeEventListener('pointerdown', this.onJump);
     this.element.removeEventListener('pointerdown', this.onDown);
     this.element.removeEventListener('pointermove', this.onMove);
     this.element.removeEventListener('pointerup', this.onUp);
