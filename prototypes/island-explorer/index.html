@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>OitoGameLab · Island Explorer 0.1</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#83bcd0;touch-action:none;font-family:system-ui,sans-serif}canvas{display:block}#hud{position:fixed;top:env(safe-area-inset-top);left:0;right:0;padding:14px 16px;color:#fff;text-shadow:0 2px 5px #20353caa;display:flex;align-items:start;justify-content:space-between;pointer-events:none}#hud strong{display:block;font-size:17px}#hud small{font-size:11px;opacity:.9}button{pointer-events:auto;border:1px solid #ffffff80;border-radius:13px;background:#173b4a99;color:white;padding:10px 12px;font-weight:700}#stick{position:fixed;left:22px;bottom:calc(24px + env(safe-area-inset-bottom));width:126px;height:126px;border:2px solid #ffffff70;border-radius:50%;background:#ffffff28;touch-action:none}#knob{position:absolute;width:54px;height:54px;left:34px;top:34px;border-radius:50%;background:#ffffffe0;box-shadow:0 2px 12px #0003;pointer-events:none}#hint{position:fixed;right:18px;bottom:calc(28px + env(safe-area-inset-bottom));color:#fff;font-size:11px;text-shadow:0 2px 5px #0009;pointer-events:none;text-align:right}
+</style>
+</head>
+<body>
+<div id="hud"><div><strong>🏝 Island Explorer</strong><small>OitoGameLab · v0.1</small></div><button id="regen">Neue Insel ↻</button></div>
+<div id="stick"><div id="knob"></div></div><div id="hint">Joystick bewegen<br>PC: WASD / Pfeiltasten</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x9bd5ec);scene.fog=new THREE.Fog(0x9bd5ec,55,115);
+const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,160);
+const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.prepend(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xd9f4ff,0x6c7252,2.25));
+const sun=new THREE.DirectionalLight(0xffefd2,2.1);sun.position.set(-18,28,12);scene.add(sun);
+const water=new THREE.Mesh(new THREE.PlaneGeometry(250,250),new THREE.MeshLambertMaterial({color:0x3d9ec4,transparent:true,opacity:.88,side:THREE.DoubleSide}));water.rotation.x=-Math.PI/2;water.position.y=.12;scene.add(water);
+const N=72,SIZE=68,STEP=SIZE/N,verts=(N+1)*(N+1);let island=null,seed=1;
+function rand(n){let x=Math.sin(n*127.1+seed*78.233)*43758.5453;return x-Math.floor(x)}
+function noise(x,z){const ix=Math.floor(x),iz=Math.floor(z),fx=x-ix,fz=z-iz;const u=fx*fx*(3-2*fx),v=fz*fz*(3-2*fz);const a=rand(ix*53+iz*971),b=rand((ix+1)*53+iz*971),c=rand(ix*53+(iz+1)*971),d=rand((ix+1)*53+(iz+1)*971);return THREE.MathUtils.lerp(THREE.MathUtils.lerp(a,b,u),THREE.MathUtils.lerp(c,d,u),v)}
+function height(x,z){const r=Math.hypot(x,z)/30,angle=Math.atan2(z,x);const edge=1+.085*Math.sin(angle*5+seed)+.06*Math.sin(angle*9-seed*.7);const mask=THREE.MathUtils.clamp((edge-r)*3.5,0,1);const hill=(noise(x*.075,z*.075)-.4)*5+(noise(x*.19+20,z*.19-10)-.5)*1.7;return -1.45+mask*(3.1+hill)+.8*Math.max(0,1-r)*mask}
+function generate(){seed=Math.floor(Math.random()*100000)+1;if(island){scene.remove(island);island.geometry.dispose();island.material.dispose()}const pos=new Float32Array(verts*3),colors=new Float32Array(verts*3),idx=[];const sand=new THREE.Color(0xe6cb8a),grass=new THREE.Color(0x71a65b),high=new THREE.Color(0x507b46),deep=new THREE.Color(0x628d7e),color=new THREE.Color();for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){const wx=(x/N-.5)*SIZE,wz=(z/N-.5)*SIZE,h=height(wx,wz),i=z*(N+1)+x;pos[i*3]=wx;pos[i*3+1]=h;pos[i*3+2]=wz;if(h<.35)color.copy(deep);else if(h<1.25)color.copy(sand);else if(h<4.8)color.copy(grass);else color.copy(high);const shade=.94+noise(wx*.31,wz*.31)*.12;colors[i*3]=color.r*shade;colors[i*3+1]=color.g*shade;colors[i*3+2]=color.b*shade}for(let z=0;z<N;z++)for(let x=0;x<N;x++){let a=z*(N+1)+x,b=a+1,c=a+N+1,d=c+1;idx.push(a,c,b,b,c,d)}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('color',new THREE.BufferAttribute(colors,3));geo.setIndex(idx);geo.computeVertexNormals();island=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}));scene.add(island);player.position.set(0,height(0,0),0);velocity.set(0,0,0)}
+const player=new THREE.Group(),body=new THREE.Mesh(new THREE.CapsuleGeometry(.42,.95,4,8),new THREE.MeshLambertMaterial({color:0xf5a34b}));body.position.y=1.05;player.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(.34,10,8),new THREE.MeshLambertMaterial({color:0xffdfb1}));head.position.y=1.96;player.add(head);const nose=new THREE.Mesh(new THREE.BoxGeometry(.17,.13,.23),new THREE.MeshLambertMaterial({color:0x7c4d2e}));nose.position.set(0,1.96,.34);player.add(nose);scene.add(player);
+const stick=document.querySelector('#stick'),knob=document.querySelector('#knob'),input=new THREE.Vector2(),keys=new Set();let pointer=null;function stickMove(e){const rect=stick.getBoundingClientRect(),dx=e.clientX-(rect.left+rect.width/2),dy=e.clientY-(rect.top+rect.height/2),len=Math.hypot(dx,dy),k=Math.min(1,len/48);input.set(len?dx/len*k:0,len?dy/len*k:0);knob.style.transform=`translate(${input.x*42}px,${input.y*42}px)`}
+stick.addEventListener('pointerdown',e=>{if(pointer!==null)return;pointer=e.pointerId;stick.setPointerCapture(pointer);stickMove(e)});stick.addEventListener('pointermove',e=>{if(e.pointerId===pointer)stickMove(e)});function release(e){if(e.pointerId!==pointer)return;pointer=null;input.set(0,0);knob.style.transform='translate(0,0)'}stick.addEventListener('pointerup',release);stick.addEventListener('pointercancel',release);
+addEventListener('keydown',e=>{keys.add(e.key.toLowerCase());if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key.toLowerCase()))e.preventDefault()});addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));addEventListener('blur',()=>{keys.clear();input.set(0,0);knob.style.transform='translate(0,0)';pointer=null});
+document.querySelector('#regen').addEventListener('click',generate);
+const velocity=new THREE.Vector3(),desired=new THREE.Vector3(),clock=new THREE.Clock(),camTarget=new THREE.Vector3();generate();
+function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.05);let x=input.x,z=-input.y;if(keys.has('a')||keys.has('arrowleft'))x-=1;if(keys.has('d')||keys.has('arrowright'))x+=1;if(keys.has('w')||keys.has('arrowup'))z+=1;if(keys.has('s')||keys.has('arrowdown'))z-=1;const length=Math.hypot(x,z);if(length>1){x/=length;z/=length}desired.set(x*5,0,-z*5);velocity.lerp(desired,1-Math.exp(-10*dt));const nx=player.position.x+velocity.x*dt,nz=player.position.z+velocity.z*dt;const h=height(nx,nz);if(h>.36){player.position.x=nx;player.position.z=nz;player.position.y=THREE.MathUtils.lerp(player.position.y,h,1-Math.exp(-15*dt))}else velocity.multiplyScalar(.15);if(velocity.lengthSq()>.06)player.rotation.y=Math.atan2(velocity.x,velocity.z);camTarget.set(player.position.x,player.position.y+11,player.position.z+17);camera.position.lerp(camTarget,1-Math.exp(-4*dt));camera.lookAt(player.position.x,player.position.y+.7,player.position.z-2);renderer.render(scene,camera)}camera.position.set(0,12,18);tick();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script>
+</body>
+</html>
