@@ -72,6 +72,13 @@ export class World {
     this.mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
     this.scene.add(this.mesh);
   }
+  findSpawn() {
+    for(let radius=0;radius<=20;radius++)for(let i=0;i<24;i++){
+      const angle=i*Math.PI/12,x=Math.cos(angle)*radius,z=Math.sin(angle)*radius;
+      if(this.walkable(x,z)&&this.height(x,z)>1.1)return {x,z};
+    }
+    return {x:0,z:0};
+  }
   walkable(x, z) {
     return Math.abs(x) <= this.size / 2 && Math.abs(z) <= this.size / 2 && this.height(x, z) > 0.45;
   }
