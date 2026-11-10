@@ -79,6 +79,14 @@ export class World {
     }
     return {x:0,z:0};
   }
+  canMoveTo(x, z, radius) {
+    if (!this.walkable(x, z)) return false;
+    for (const tree of this.treeColliders ?? []) {
+      const clearance = tree.radius + radius;
+      if ((tree.x - x) ** 2 + (tree.z - z) ** 2 < clearance ** 2) return false;
+    }
+    return true;
+  }
   walkable(x, z) {
     return Math.abs(x) <= this.size / 2 && Math.abs(z) <= this.size / 2 && this.height(x, z) > 0.45;
   }

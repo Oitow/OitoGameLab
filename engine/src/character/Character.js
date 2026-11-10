@@ -62,10 +62,13 @@ export class Character {
   this.velocity.z=THREE.MathUtils.lerp(this.velocity.z,move.y*speed,response);
   const p=this.group.position;
   const nx=p.x+this.velocity.x*dt,nz=p.z+this.velocity.z*dt;
-  if(this.world.walkable(nx,nz)){
+  if(this.world.canMoveTo(nx,nz,.35)){
    p.x=nx;p.z=nz;
   }else{
-   this.velocity.x=0;this.velocity.z=0;
+   if(this.world.canMoveTo(nx,p.z,.35))p.x=nx;
+   else this.velocity.x=0;
+   if(this.world.canMoveTo(p.x,nz,.35))p.z=nz;
+   else this.velocity.z=0;
   }
   if(input.consumeJump())this.jump();
   this.landing=Math.max(0,this.landing-dt*5);
