@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#163d43" />
+    <link rel="icon" href="data:," />
+    <title>OitoEngine · Spielplatz</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <canvas
+      id="scene"
+      aria-label="Prozedurale Insel mit steuerbarem Charakter"
+    ></canvas>
+    <header>
+      <div>
+        <span class="eyebrow">OITO / ENGINE LAB</span
+        ><strong id="objective">Welt entsteht …</strong>
+      </div>
+      <button id="pause" aria-pressed="false">Pause</button>
+    </header>
+    <details id="settings">
+      <summary>Spiel & Welt</summary>
+      <section>
+        <label
+          >Spielmodus<select id="game">
+            <option value="explorer">Freies Erkunden</option>
+            <option value="scavenger">Kristallsuche</option>
+          </select></label
+        >
+        <form id="world">
+          <label
+            >Welt-Seed<input
+              id="seed"
+              type="number"
+              min="0"
+              max="4294967295"
+              step="1"
+              required /></label
+          ><button>Erzeugen</button>
+        </form>
+        <button id="random">Zufällige Welt</button>
+        <div class="row">
+          <button id="save">Speichern</button><button id="load">Laden</button>
+        </div>
+        <p id="stats"></p>
+        <a href="../">Zum Game Lab</a>
+      </section>
+    </details>
+    <p id="message" role="status">Joystick / WASD · Springen</p>
+    <div id="joystick" aria-label="Bewegungs-Joystick">
+      <div id="knob"></div>
+    </div>
+    <button id="jump" aria-label="Springen">↟<small>SPRUNG</small></button>
+    <div id="error" role="alert" hidden></div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

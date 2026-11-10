@@ -1,0 +1,17 @@
+name: Playable increment
+description: A focused engine improvement or game mechanic
+title: "[Feature] "
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What should the player be able to do?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Include touch controls, affected systems and how to test.
+    validations:
+      required: true

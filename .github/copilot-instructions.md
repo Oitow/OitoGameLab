@@ -1,0 +1,1 @@
+Read and follow `/AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/STATUS.md` and `docs/WORKFLOW.md` before changes. Keep the pure simulation/render/game boundaries. Run `npm test` and `npm run check`. Preserve archived demos. Never report unperformed browser/device tests or publish automatically.
