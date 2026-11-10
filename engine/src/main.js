@@ -1,5 +1,6 @@
 import { Engine } from './core/Engine.js';
 import { World } from './world/World.js';
+import { WorldObjects } from './world/WorldObjects.js';
 import { Character } from './character/Character.js';
 import { Input } from './input/Input.js';
 import { CameraRig } from './camera/CameraRig.js';
@@ -7,6 +8,7 @@ try {
   const engine = new Engine();
   let seed = 12345;
   const world = new World(engine.scene, seed);
+  const scenery = new WorldObjects(engine.scene, world);
   const character = new Character(engine.scene, world);
   const input = new Input(document.querySelector('#joystick'), document.querySelector('#knob'));
   const cameraRig = new CameraRig(engine.camera);
@@ -15,6 +17,7 @@ try {
   document.querySelector('#regenerate').addEventListener('click', () => {
     seed = Math.floor(Math.random() * 999999) + 1;
     world.generate(seed);
+    scenery.rebuild();
     character.reset();
     cameraRig.snap(character.group.position);
   });
@@ -25,7 +28,7 @@ try {
     cameraRig.update(dt, character.group.position);
     uiTime += dt;
     if (uiTime > 0.3) {
-      stats.textContent = `FPS: ${engine.fps} · Seed: ${seed}`;
+      stats.textContent = `FPS: ${engine.fps} · Bäume: ${scenery.mesh.count} · Seed: ${seed}`;
       uiTime = 0;
     }
   });
