@@ -1,0 +1,18 @@
+name: Bug report
+description: Reproducible gameplay or engine problem
+title: "[Bug] "
+body:
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps, expected and actual result
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device, browser and game URL / seed
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshot or console error
