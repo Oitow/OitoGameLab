@@ -59,7 +59,8 @@ export class Input {
       this.knob.style.transform = "translate(0,0)";
     };
     this.onKeyDown = (e) => {
-      if (/INPUT|SELECT|TEXTAREA|BUTTON/.test(e.target.tagName)) return;
+      if (/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+      if (e.target.tagName === "BUTTON" && e.code === "Space") return;
       const k = e.key.toLowerCase();
       if ((k === " " || k === "spacebar") && !e.repeat) {
         this.jumpQueued = true;
