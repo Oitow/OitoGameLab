@@ -15,7 +15,8 @@ export class Character {
     this.reset();
   }
   reset() {
-    this.group.position.set(0, this.world.height(0, 0), 0);
+    const {x,z}=this.world.findSpawn();
+    this.group.position.set(x,this.world.height(x,z),z);
     this.velocity.set(0, 0, 0);
   }
   update(dt, input) {
