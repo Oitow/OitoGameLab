@@ -209,7 +209,8 @@ const SAVE_KEY = "oito.save.v2";
     // A completed save exercises the built campfire view and hides all pickups.
     const completedCamp = await snapshot(false);
     completedCamp.state = { version: 1, collected: [1, 2, 3, 4, 5], inventory: { wood: 0, stone: 0 }, built: true };
-    completedCamp.player.z += 2;
+    completedCamp.player.x += 3;
+    completedCamp.player.z += 1;
     await page.evaluate(({ key, save }) => localStorage.setItem(key, JSON.stringify(save)),
       { key: SAVE_KEY, save: completedCamp });
     await page.locator("#load").click();
