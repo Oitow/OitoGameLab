@@ -3,16 +3,15 @@ export class TerrainView {
   constructor(scene, terrain) {
     this.scene = scene;
     this.terrain = terrain;
-    this.size = 70;
-    this.segments = 72;
+    this.size = terrain.size;
+    this.segments = 160;
     this.mesh = null;
     this.water = new THREE.Mesh(
-      new THREE.PlaneGeometry(200, 200),
+      new THREE.PlaneGeometry(900, 900),
       new THREE.MeshLambertMaterial({
-        color: 0x419fc2,
+        color: 0x508e9c,
         side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.9,
+
       }),
     );
     this.water.rotation.x = -Math.PI / 2;
@@ -37,7 +36,7 @@ export class TerrainView {
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     const indices = [];
-    const color = new THREE.Color();
+    const color = new THREE.Color(), meadowColor = new THREE.Color(0xa39e70);
     for (let z = 0; z <= n; z++)
       for (let x = 0; x <= n; x++) {
         const wx = (x / n - 0.5) * this.size;
@@ -49,14 +48,19 @@ export class TerrainView {
         positions[i + 2] = wz;
         color.setHex(
           h < 0.35
-            ? 0x648e83
+            ? 0x668d83
             : h < 1.25
-              ? 0xe4ca91
-              : h < 4.4
-                ? 0x77ab5e
-                : 0x547d49,
+              ? 0xd0bc8a
+              : h < 6.5
+                ? 0x819568
+                : 0x6a805d,
         );
-        const variation = 0.94 + this.noise(wx * 0.31, wz * 0.31) * 0.12;
+        // Broad meadow patches read as landscape instead of per-triangle noise.
+        if (h > 1.25) {
+          const meadow = this.noise(wx * 0.045 + 31, wz * 0.045 - 17);
+          color.lerp(meadowColor, Math.max(0, meadow - 0.48) * 0.65);
+        }
+        const variation = 0.94 + this.noise(wx * 0.18, wz * 0.18) * 0.12;
         colors[i] = color.r * variation;
         colors[i + 1] = color.g * variation;
         colors[i + 2] = color.b * variation;
@@ -78,6 +82,7 @@ export class TerrainView {
       geometry,
       new THREE.MeshLambertMaterial({
         vertexColors: true,
+        flatShading: true,
         side: THREE.DoubleSide,
       }),
     );

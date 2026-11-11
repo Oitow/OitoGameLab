@@ -32,7 +32,7 @@ const SAVE_KEY = "oito.save.v2";
       });
     });
     await mkdir("test-results", { recursive: true });
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({ headless: true, ...(process.env.OITO_CHROMIUM_PATH ? { executablePath: process.env.OITO_CHROMIUM_PATH } : {}) });
     page = await browser.newPage({
       viewport: { width: 390, height: 844 },
       isMobile: true,
@@ -51,6 +51,7 @@ const SAVE_KEY = "oito.save.v2";
         "Erkunde deine Insel",
     );
     assert.equal(await page.locator("#error").isVisible(), false);
+    await page.waitForTimeout(350);
     await page.screenshot({ path: "test-results/portrait.png" });
     const openSettings = async () => {
       if (
@@ -192,6 +193,9 @@ const SAVE_KEY = "oito.save.v2";
     );
     await page.screenshot({ path: "test-results/camp.png" });
     await openSettings();
+    await page.selectOption("#quality", "economy");
+    await page.selectOption("#quality", "crisp");
+    await page.selectOption("#quality", "balanced");
     const bounds = await page.locator("#settings section").boundingBox();
     assert.ok(
       bounds.x >= 0 &&
@@ -201,6 +205,19 @@ const SAVE_KEY = "oito.save.v2";
     );
     await page.screenshot({ path: "test-results/settings-portrait.png" });
     await page.locator("#pause").click();
+
+    // A completed save exercises the built campfire view and hides all pickups.
+    const completedCamp = await snapshot(false);
+    completedCamp.state = { version: 1, collected: [1, 2, 3, 4, 5], inventory: { wood: 0, stone: 0 }, built: true };
+    completedCamp.player.x += 3;
+    completedCamp.player.z += 1;
+    await page.evaluate(({ key, save }) => localStorage.setItem(key, JSON.stringify(save)),
+      { key: SAVE_KEY, save: completedCamp });
+    await page.locator("#load").click();
+    assert.equal(await page.locator("#message").textContent(), "Spielstand geladen.");
+    await page.locator("#pause").click();
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: "test-results/camp-built.png" });
 
     // Exercise actual WebGL loss/recovery rather than dispatching fake canvas events.
     const canLoseContext = await page.evaluate(() => {

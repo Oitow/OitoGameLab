@@ -1,5 +1,17 @@
 # Status — 2026-11-11
 
+## Implemented for 0.6
+
+- 200 m seeded world with broad rolling interior and an island roughly 180 m across.
+- Two-metre polygon adventurer: tapered limbs, face, hair, tunic, pack and procedural joint animation (762 triangles, 19 meshes).
+- 8–16 m pine/oak trees, branching crowns, larger faceted rocks, 500 visual-only ground plants and flowers.
+- Instanced scenery in seven batches plus one merged terrain-following contact-shadow batch; no shadow maps or postprocessing.
+- Faceted vertex-coloured terrain, muted sea/sky, warm sunlight and distance fog.
+- Closer human-scale camera with heightfield sightline clearance.
+- Economy/balanced/crisp rendering resolution controls; triangle count alongside FPS and draw calls.
+- Recognizable log/stone pickups, faceted crystals and a stone-ring campfire that lights when built.
+- Island Explorer and earlier engine experiments preserved.
+
 ## Implemented for 0.5
 
 - Shared pure simulation with render interpolation and seeded world layout.
@@ -14,7 +26,11 @@
 
 ## Validation
 
-See the implementation PR and GitHub Actions run for final automated results and screenshots. Real Android testing remains a manual gate. Runtime requires the pinned Three.js CDN.
+Validation: 42 tests and syntax/import/boundary checks pass. The GitHub Actions browser suite passed portrait/desktop interaction, saves, regeneration, resolution settings and actual WebGL loss/recovery; screenshots were downloaded and inspected. Local Chromium startup is blocked by the execution environment; see the PR for CI evidence. Real Android testing remains a manual gate. Runtime requires the pinned Three.js CDN.
+
+## World generation compatibility
+
+0.6 changes the shape and scenery associated with a seed. Save DTOs remain version 2 and same-version round trips work; an older position that now overlaps a tree/rock can be rejected by existing validation. Existing generated worlds are not frozen or migrated.
 
 ## Boundaries
 
