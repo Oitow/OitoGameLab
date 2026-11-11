@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { TerrainView } from "./TerrainView.js";
 import { CharacterView } from "./CharacterView.js";
 import { WorldObjects } from "./WorldObjects.js";
+import { MarkerView } from "./MarkerView.js";
 import { CameraRig } from "./CameraRig.js";
 export class Renderer {
   constructor(canvas) {
@@ -60,32 +61,8 @@ export class Renderer {
     );
     this.contact.rotation.x = -Math.PI / 2;
     this.scene.add(this.contact);
-    const geometry = new THREE.OctahedronGeometry(0.48),
-      material = new THREE.MeshStandardMaterial({
-        color: 0x9cf6ff,
-        emissive: 0x197b9c,
-        roughness: 0.25,
-        metalness: 0.4,
-      });
-    for (const m of session.game.markers) {
-      const kind = m.kind || "crystal";
-      const colors = {
-        wood: 0xb98a52,
-        stone: 0xc9d1cf,
-        camp: 0xffbb5c,
-        crystal: 0x9cf6ff,
-      };
-      const mesh = new THREE.Mesh(geometry, material.clone());
-      mesh.material.color.setHex(colors[kind] || colors.crystal);
-      mesh.userData.kind = kind;
-      mesh.position.set(m.x, m.y, m.z);
-      this.scene.add(mesh);
-      this.markers.set(m.id, mesh);
-    }
-    material.dispose();
-    if (!this.markers.size) {
-      geometry.dispose();
-    }
+    this.markerView = new MarkerView(this.scene, session.game.markers);
+    this.markers = this.markerView.markers;
     this.character.update(0, session.character.state);
     this.rig.snap(this.character.group.position, session.terrain);
   }
@@ -98,12 +75,7 @@ export class Renderer {
     this.contact.scale.setScalar(1 + lift * 0.15);
     this.contact.material.opacity = 0.23 / (1 + lift);
     this.rig.update(dt, this.character.group.position, session.terrain);
-    for (const [id, m] of this.markers) {
-      m.visible = !session.game.collected.includes(id);
-      m.rotation.y += dt;
-      if (m.userData.kind === "camp")
-        m.material.emissive.setHex(session.game.built ? 0xff5511 : 0x403020);
-    }
+    this.markerView.update(dt, session.game);
     this.renderer.render(this.scene, this.camera);
   }
   dispose() {

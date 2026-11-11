@@ -9,6 +9,7 @@
 - Faceted vertex-coloured terrain, muted sea/sky, warm sunlight and distance fog.
 - Closer human-scale camera with heightfield sightline clearance.
 - Economy/balanced/crisp rendering resolution controls; triangle count alongside FPS and draw calls.
+- Recognizable log/stone pickups, faceted crystals and a stone-ring campfire that lights when built.
 - Island Explorer and earlier engine experiments preserved.
 
 ## Implemented for 0.5
@@ -25,7 +26,7 @@
 
 ## Validation
 
-Local validation: 42 tests and syntax/import/boundary checks pass. Local Chromium startup is blocked by the execution environment; the PR browser workflow supplies screenshot and interaction verification. See the PR for final CI evidence. Real Android testing remains a manual gate. Runtime requires the pinned Three.js CDN.
+Validation: 42 tests and syntax/import/boundary checks pass. The GitHub Actions browser suite passed portrait/desktop interaction, saves, regeneration, resolution settings and actual WebGL loss/recovery; screenshots were downloaded and inspected. Local Chromium startup is blocked by the execution environment; see the PR for CI evidence. Real Android testing remains a manual gate. Runtime requires the pinned Three.js CDN.
 
 ## World generation compatibility
 

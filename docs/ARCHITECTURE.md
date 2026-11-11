@@ -44,4 +44,6 @@ Use `npm run new:game -- my-game "My Game"` to generate a game module; see `NEW_
 
 Terrain and layout remain pure seeded simulation. `WorldLayout` emits tree species, height, trunk radius, canopy radius and yaw; visual-only decorations never enter collision. The view uses seven instanced scenery batches and one merged terrain-following contact-shadow batch. A 160×160 terrain grid supplies 51,200 faceted triangles for the 200 m square; simulation continues to query the analytical heightfield. Trees are 8–16 m, the feet-origin character is 2 m at rest. Character static details are batched by material; articulated joints remain separate (762 triangles / 19 meshes total).
 
+`MarkerView` presents crystals, resource pickups and a built/unbuilt campfire with shared geometry/materials; animation freezes at dt=0 and reads collected/built state.
+
 The camera samples the terrain along its sightline, without changing simulation. It does not resolve occlusion against tree canopies. Cheap contact shadows are separate geometry; there are no shadow maps, textures or postprocessing. Graphics settings change render resolution only, preserving world determinism and collision. Save format remains compatible structurally, but seeds regenerate a new world shape; old obstructed positions may fail existing validation.

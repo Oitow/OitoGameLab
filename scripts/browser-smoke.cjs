@@ -206,6 +206,18 @@ const SAVE_KEY = "oito.save.v2";
     await page.screenshot({ path: "test-results/settings-portrait.png" });
     await page.locator("#pause").click();
 
+    // A completed save exercises the built campfire view and hides all pickups.
+    const completedCamp = await snapshot(false);
+    completedCamp.state = { version: 1, collected: [1, 2, 3, 4, 5], inventory: { wood: 0, stone: 0 }, built: true };
+    completedCamp.player.z += 2;
+    await page.evaluate(({ key, save }) => localStorage.setItem(key, JSON.stringify(save)),
+      { key: SAVE_KEY, save: completedCamp });
+    await page.locator("#load").click();
+    assert.equal(await page.locator("#message").textContent(), "Spielstand geladen.");
+    await page.locator("#pause").click();
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: "test-results/camp-built.png" });
+
     // Exercise actual WebGL loss/recovery rather than dispatching fake canvas events.
     const canLoseContext = await page.evaluate(() => {
       const canvas = document.querySelector("#scene");
