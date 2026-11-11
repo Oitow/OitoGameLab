@@ -2,7 +2,7 @@
 
 Mehrere kleine Browser-Spiele, eine gemeinsame modulare Grundlage. Mobile-first, Android und Hochformat; Desktop mit WASD und Leertaste.
 
-**Neustart: OitoEngine 0.4.** Zwei Beispielspiele nutzen dieselben Systeme: Freies Erkunden und Kristallsuche. Weltgenerierung, Charakter-Simulation, Rendering, Eingabe und Spielregeln sind getrennt.
+**Neustart: OitoEngine 0.5.** Drei Beispielspiele nutzen dieselben Systeme: Freies Erkunden, Kristallsuche und Lagerbau. Weltgenerierung, Charakter-Simulation, Rendering, Eingabe und Spielregeln sind getrennt.
 
 [Spielplatz](https://oitow.github.io/OitoGameLab/play/) · [Frühere Engine-Demo](https://oitow.github.io/OitoGameLab/engine/) · [Island Explorer](https://oitow.github.io/OitoGameLab/prototypes/island-explorer/)
 
@@ -40,3 +40,5 @@ Dann http://localhost:4173/play/ öffnen. Three.js wird in festgelegter Version 
 Zuerst [Status](docs/STATUS.md), [Architektur](docs/ARCHITECTURE.md), [Workflow](docs/WORKFLOW.md) und [Agenten-Regeln](AGENTS.md) lesen. Neue Spiele werden als Module unter `games/` hinzugefügt. Gemeinsam genutzte Systeme bleiben im Engine-Kern.
 
 Agenten-Dateien beschreiben Rollen und Qualitätsregeln; sie starten keine selbstständig arbeitenden Hintergrund-Agenten. Dieses Fundament ist bewusst klein: echte Objektphysik, Inventar, NPCs und Streaming sind weitere Schritte.
+
+Neue Spiele: `npm run new:game -- mein-spiel "Mein Spiel"`, dann in `games/registry.js` registrieren. Anleitung: [NEW_GAME](docs/NEW_GAME.md).

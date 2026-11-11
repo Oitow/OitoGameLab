@@ -2,10 +2,10 @@ import { Session } from "../src/core/Session.js";
 import { FixedStep } from "../src/core/FixedStep.js";
 import { Input } from "../src/input/Input.js";
 import { Renderer } from "../src/render/Renderer.js";
-import { explorer } from "../games/explorer/game.js";
-import { scavenger } from "../games/scavenger/game.js";
+import { games, getGameDefinition } from "../games/registry.js";
+import { SaveStore } from "../src/storage/SaveStore.js";
 const $ = (s) => document.querySelector(s),
-  definitions = { explorer, scavenger },
+  definitions = games,
   clock = new FixedStep();
 let session,
   renderer,
@@ -21,14 +21,14 @@ const notify = (message) => {
 };
 function save() {
   try {
-    localStorage.setItem("oito.save.v1", JSON.stringify(session.snapshot()));
+    new SaveStore(localStorage).save(session);
     notify("Spielstand gespeichert.");
   } catch {
     notify("Speichern ist in diesem Browser nicht verfügbar.");
   }
 }
 function start(id, seed, data) {
-  session = new Session(definitions[id] || explorer, seed);
+  session = new Session(getGameDefinition(id), seed);
   if (data && !session.restore(data))
     throw new Error("Spielstand ist ungültig.");
   input.onBlur();
@@ -40,8 +40,9 @@ function start(id, seed, data) {
   notify("WASD / Joystick · Leertaste / Sprung");
 }
 function setPaused(value) {
+  if (!value && contextLost) return;
   paused = value;
-  input.onBlur();
+  input.setEnabled(!paused);
   clock.reset();
   last = 0;
   $("#pause").textContent = paused ? "Weiter" : "Pause";
@@ -51,6 +52,12 @@ function setPaused(value) {
 try {
   renderer = new Renderer($("#scene"));
   input = new Input($("#joystick"), $("#knob"));
+  for (const game of games.values()) {
+    const option = document.createElement("option");
+    option.value = game.id;
+    option.textContent = game.name;
+    $("#game").append(option);
+  }
   const params = new URLSearchParams(location.search),
     seed = Number(params.get("seed") || 12345);
   start(params.get("game") || "explorer", Number.isFinite(seed) ? seed : 12345);
@@ -68,18 +75,16 @@ try {
   $("#save").onclick = save;
   $("#load").onclick = () => {
     try {
-      const data = JSON.parse(localStorage.getItem("oito.save.v1"));
-      if (
-        !data ||
-        !definitions[data.game] ||
-        !Number.isInteger(data.seed) ||
-        data.seed < 0 ||
-        data.seed > 4294967295
-      )
-        throw Error();
-      const candidate = new Session(definitions[data.game], data.seed);
-      if (!candidate.restore(data)) throw Error();
-      start(data.game, data.seed, data);
+      const candidate = new SaveStore(localStorage).load(
+        games,
+        (definition, seed) => new Session(definition, seed),
+      );
+      session = candidate;
+      input.onBlur();
+      clock.reset();
+      renderer.mount(session);
+      $("#game").value = session.id;
+      $("#seed").value = session.terrain.seed;
       notify("Spielstand geladen.");
     } catch {
       notify("Kein gültiger Spielstand gefunden.");
@@ -94,11 +99,14 @@ try {
   $("#scene").addEventListener("webglcontextlost", (e) => {
     e.preventDefault();
     contextLost = true;
+    $("#pause").disabled = true;
     setPaused(true);
     notify("Grafik unterbrochen. Wiederherstellung läuft …");
   });
   $("#scene").addEventListener("webglcontextrestored", () => {
     contextLost = false;
+    $("#pause").disabled = false;
+    setPaused(true);
     renderer.mount(session);
     notify("Grafik wiederhergestellt. Mit Weiter fortsetzen.");
   });
@@ -107,17 +115,31 @@ try {
     const dt = last ? Math.min((time - last) / 1000, 0.1) : 0;
     last = time;
     if (contextLost) return;
+    let alpha = 1;
     if (!paused) {
       input.update();
-      clock.advance(dt, (step) =>
-        session.step(step, {
+      alpha = clock.advance(dt, (step) => {
+        const feedback = session.step(step, {
           x: input.direction.x,
           z: input.direction.y,
           jump: input.consumeJump(),
-        }),
-      );
+          interact: input.consumeInteract(),
+        });
+        if (feedback) notify(feedback);
+      });
     }
-    renderer.draw(paused ? 0 : dt, session);
+    renderer.draw(paused ? 0 : dt, session, alpha);
+    const interactive = Boolean(session.game.interact);
+    $("#interact").hidden = !interactive;
+    $("#interact").disabled =
+      paused || !session.game.prompt?.(session.character.state);
+    $("#prompt").textContent = paused
+      ? ""
+      : session.game.prompt?.(session.character.state) || "";
+    $("#inventory").hidden = !session.game.inventory;
+    $("#inventory").textContent = session.game.inventory
+      ? `Holz ${session.game.inventory.count("wood")} · Stein ${session.game.inventory.count("stone")}`
+      : "";
     uiTime += dt;
     frames++;
     if (uiTime >= 0.5) {

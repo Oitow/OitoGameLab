@@ -18,7 +18,7 @@ for (const file of await walk(".")) {
   if (check.status !== 0) throw Error(check.stderr);
   const text = await readFile(file, "utf8");
   if (
-    /^(src\/(core|world|character)|games\/)/.test(file) &&
+    /^(src\/(core|world|character|physics|gameplay)|games\/)/.test(file) &&
     /from\s+['"]three|\b(document|window|localStorage)\b/.test(text)
   )
     throw Error("Simulation boundary violated: " + file);

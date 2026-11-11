@@ -33,12 +33,7 @@
     <details id="settings">
       <summary>Spiel & Welt</summary>
       <section>
-        <label
-          >Spielmodus<select id="game">
-            <option value="explorer">Freies Erkunden</option>
-            <option value="scavenger">Kristallsuche</option>
-          </select></label
-        >
+        <label>Spielmodus<select id="game"></select></label>
         <form id="world">
           <label
             >Welt-Seed<input
@@ -58,12 +53,23 @@
         <a href="../">Zum Game Lab</a>
       </section>
     </details>
+    <p id="inventory" hidden></p>
+    <p id="prompt"></p>
+    <button id="interact" hidden aria-label="Interagieren">E · Aktion</button>
     <p id="message" role="status">Joystick / WASD · Springen</p>
     <div id="joystick" aria-label="Bewegungs-Joystick">
       <div id="knob"></div>
     </div>
     <button id="jump" aria-label="Springen">↟<small>SPRUNG</small></button>
     <div id="error" role="alert" hidden></div>
-    <script type="module" src="./main.js"></script>
+    <script type="module">
+      import("./main.js").catch((error) => {
+        const box = document.querySelector("#error");
+        box.hidden = false;
+        box.textContent =
+          "Start fehlgeschlagen. Bitte Internetverbindung prüfen und neu laden. " +
+          error.message;
+      });
+    </script>
   </body>
 </html>

@@ -199,3 +199,41 @@ a {
     top: 29px;
   }
 }
+
+[hidden] {
+  display: none !important;
+}
+#inventory {
+  position: fixed;
+  top: 54px;
+  left: 16px;
+  font-size: 12px;
+  text-shadow: 0 1px 4px #123;
+}
+#prompt {
+  position: fixed;
+  bottom: 180px;
+  left: 16px;
+  right: 16px;
+  text-align: center;
+  font-size: 13px;
+  text-shadow: 0 1px 5px #123;
+  pointer-events: none;
+}
+#interact {
+  position: fixed;
+  right: 20px;
+  bottom: 145px;
+  min-height: 48px;
+  background: #674d2ee8;
+}
+button:disabled {
+  opacity: 0.5;
+}
+#objective {
+  max-width: calc(100vw - 110px);
+  font-size: 15px;
+}
+#message {
+  bottom: 208px;
+}

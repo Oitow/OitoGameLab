@@ -46,7 +46,7 @@ export class Renderer {
     sun.position.set(-14, 26, 18);
     this.scene.add(sun);
     this.terrain = new TerrainView(this.scene, session.terrain);
-    this.scenery = new WorldObjects(this.scene, session.terrain);
+    this.scenery = new WorldObjects(this.scene, session.layout);
     this.character = new CharacterView(this.scene);
     const geometry = new THREE.OctahedronGeometry(0.48),
       material = new THREE.MeshStandardMaterial({
@@ -56,24 +56,35 @@ export class Renderer {
         metalness: 0.4,
       });
     for (const m of session.game.markers) {
-      const mesh = new THREE.Mesh(geometry, material);
+      const kind = m.kind || "crystal";
+      const colors = {
+        wood: 0xb98a52,
+        stone: 0xc9d1cf,
+        camp: 0xffbb5c,
+        crystal: 0x9cf6ff,
+      };
+      const mesh = new THREE.Mesh(geometry, material.clone());
+      mesh.material.color.setHex(colors[kind] || colors.crystal);
+      mesh.userData.kind = kind;
       mesh.position.set(m.x, m.y, m.z);
       this.scene.add(mesh);
       this.markers.set(m.id, mesh);
     }
+    material.dispose();
     if (!this.markers.size) {
       geometry.dispose();
-      material.dispose();
     }
     this.character.update(0, session.character.state);
     this.rig.snap(this.character.group.position);
   }
-  draw(dt, session) {
-    this.character.update(dt, session.character.state);
+  draw(dt, session, alpha = 1) {
+    this.character.update(dt, session.renderState(alpha));
     this.rig.update(dt, this.character.group.position);
     for (const [id, m] of this.markers) {
       m.visible = !session.game.collected.includes(id);
       m.rotation.y += dt;
+      if (m.userData.kind === "camp")
+        m.material.emissive.setHex(session.game.built ? 0xff5511 : 0x403020);
     }
     this.renderer.render(this.scene, this.camera);
   }
