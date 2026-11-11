@@ -28,6 +28,7 @@ export class Renderer {
     const caps = { economy: 1, balanced: 1.5, crisp: 2 };
     this.quality = Object.hasOwn(caps, quality) ? quality : "balanced";
     this.renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio || 1, caps[this.quality]));
+    this.terrain?.setQuality(this.quality);
     this.resize?.();
   }
   clear() {
@@ -52,7 +53,7 @@ export class Renderer {
     const sun = new THREE.DirectionalLight(0xffdfac, 2.2);
     sun.position.set(-14, 26, 18);
     this.scene.add(sun);
-    this.terrain = new TerrainView(this.scene, session.terrain);
+    this.terrain = new TerrainView(this.scene, session.terrain, this.quality);
     // Spatial batches let Three.js reject whole groves outside the camera frustum.
     const regions = new Map();
     const region = (o) => {

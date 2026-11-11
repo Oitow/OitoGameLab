@@ -1,5 +1,18 @@
 # Status — 2026-11-11
 
+## Implemented for 0.8
+
+- Terrain chunks now select 2 m / 4 m / 8 m mesh spacing by camera distance. Near terrain retains the 0.7 detail.
+- Eight-metre downward edge skirts cover resolution-boundary cracks; 12% switching hysteresis limits boundary flicker.
+- Graphics presets now control distant terrain detail as well as pixel ratio. Economy simplifies sooner; crisp retains detail farther.
+- All terrain levels share one material. Existing renderer teardown disposes every level and shared material once.
+- Seeded generation, character movement/collision, world dimensions and save format are unchanged.
+- This is distance LOD, not streaming. Additional prebuilt mesh levels increase mount work and GPU memory in exchange for fewer submitted triangles during play.
+
+## 0.8 validation
+
+One local unit-suite invocation passed 48 tests, including terrain topology, winding, nested boundary samples, skirt depth and reduced distant triangle budgets. Syntax/import/boundary checks passed. PR CI covers desktop/portrait browser play, graphics triangle-budget comparison and close/far camera screenshots. Local Chromium is known to be blocked by process socket restrictions and was not retried. Real Android frame-time/memory measurement remains outstanding.
+
 ## Implemented for 0.7
 
 - 640 m square seeded world (10.24× the previous area), roughly 550 m island, broad rolling hills.
@@ -14,7 +27,7 @@
 
 ## 0.7 validation
 
-Two unit-suite invocations: first caught terrain-range and outdated budget assertions; second passed all 46 tests. One syntax/import/boundary check passed. One local browser attempt failed before opening a page because Chromium cannot create its process socket in this environment. Browser screenshots, visual/input validation and real Android performance remain unverified locally. PR CI is the remaining browser validation round; no FPS guarantee.
+Two unit-suite invocations: first caught terrain-range and outdated budget assertions; second passed all 46 tests. One syntax/import/boundary check passed. One local browser attempt failed before opening a page because Chromium cannot create its process socket in this environment. PR #7 CI subsequently passed both code and browser checks; portrait, desktop and settings screenshots were downloaded and inspected. Real Android performance remains unverified; no FPS guarantee.
 
 ## Implemented for 0.6
 
