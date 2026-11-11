@@ -72,6 +72,7 @@ try {
     if (paused) $("#settings").open = false;
     setPaused(!paused);
   };
+  $("#camera-distance").oninput = () => renderer.rig.setDistance($("#camera-distance").value);
   $("#quality").onchange = () => renderer.setQuality($("#quality").value);
   $("#save").onclick = save;
   $("#load").onclick = () => {

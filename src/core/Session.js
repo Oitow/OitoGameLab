@@ -1,3 +1,4 @@
+import { createCharacterProfile } from "../character/CharacterProfile.js";
 import { Terrain } from "../world/Terrain.js";
 import { WorldLayout } from "../world/WorldLayout.js";
 import { StaticCollisions } from "../physics/StaticCollisions.js";
@@ -17,7 +18,9 @@ export class Session {
       exclude: this.game.markers.map((marker) => ({ ...marker, radius: 2.2 })),
     });
     this.collisions = new StaticCollisions(this.layout.objects);
+    this.profile = createCharacterProfile(this.terrain.seed);
     this.character = new CharacterController(this.terrain, {
+      profile: this.profile,
       collisions: this.collisions,
     });
     this.previous = pose(this.character.state);
