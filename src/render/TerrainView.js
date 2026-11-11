@@ -4,7 +4,8 @@ export class TerrainView {
     this.scene = scene;
     this.terrain = terrain;
     this.size = terrain.size;
-    this.segments = 160;
+    this.segments = 32;
+    this.chunkSize = 64;
     this.mesh = null;
     this.water = new THREE.Mesh(
       new THREE.PlaneGeometry(900, 900),
@@ -17,7 +18,11 @@ export class TerrainView {
     this.water.rotation.x = -Math.PI / 2;
     this.water.position.y = 0;
     scene.add(this.water);
-    this.generate();
+    this.mesh = new THREE.Group();
+    scene.add(this.mesh);
+    for (let z = -this.size / 2; z < this.size / 2; z += this.chunkSize)
+      for (let x = -this.size / 2; x < this.size / 2; x += this.chunkSize)
+        this.generate(x, z);
   }
   height(x, z) {
     return this.terrain.height(x, z);
@@ -25,12 +30,7 @@ export class TerrainView {
   noise(x, z) {
     return this.terrain.noise(x, z);
   }
-  generate() {
-    if (this.mesh) {
-      this.scene.remove(this.mesh);
-      this.mesh.geometry.dispose();
-      this.mesh.material.dispose();
-    }
+  generate(originX, originZ) {
     const n = this.segments,
       count = (n + 1) * (n + 1);
     const positions = new Float32Array(count * 3);
@@ -39,8 +39,8 @@ export class TerrainView {
     const color = new THREE.Color(), meadowColor = new THREE.Color(0xa39e70);
     for (let z = 0; z <= n; z++)
       for (let x = 0; x <= n; x++) {
-        const wx = (x / n - 0.5) * this.size;
-        const wz = (z / n - 0.5) * this.size;
+        const wx = originX + x / n * this.chunkSize;
+        const wz = originZ + z / n * this.chunkSize;
         const h = this.height(wx, wz);
         const i = (z * (n + 1) + x) * 3;
         positions[i] = wx;
@@ -78,7 +78,7 @@ export class TerrainView {
     geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     geometry.setIndex(indices);
     geometry.computeVertexNormals();
-    this.mesh = new THREE.Mesh(
+    const chunk = new THREE.Mesh(
       geometry,
       new THREE.MeshLambertMaterial({
         vertexColors: true,
@@ -86,12 +86,15 @@ export class TerrainView {
         side: THREE.DoubleSide,
       }),
     );
-    this.scene.add(this.mesh);
+    geometry.computeBoundingSphere();
+    this.mesh.add(chunk);
   }
   dispose() {
     this.scene.remove(this.mesh, this.water);
-    this.mesh.geometry.dispose();
-    this.mesh.material.dispose();
+    this.mesh.traverse((chunk) => {
+      chunk.geometry?.dispose();
+      chunk.material?.dispose();
+    });
     this.water.geometry.dispose();
     this.water.material.dispose();
   }

@@ -26,10 +26,27 @@ export class StaticCollisions {
         "Static collider positions and positive radii must be finite",
       );
     }
+    this.bins = new Map();
+    this.maxRadius = 0;
+    for (const object of this.objects) {
+      this.maxRadius = Math.max(this.maxRadius, object.radius);
+      const key = `${Math.floor(object.x / 16)},${Math.floor(object.z / 16)}`;
+      if (!this.bins.has(key)) this.bins.set(key, []);
+      this.bins.get(key).push(object);
+    }
+  }
+
+  candidates(x, z, dx = 0, dz = 0, radius = 0.35) {
+    const found = new Set();
+    const pad = radius + this.maxRadius;
+    for (let bx = Math.floor((Math.min(x, x + dx) - pad) / 16); bx <= Math.floor((Math.max(x, x + dx) + pad) / 16); bx++)
+      for (let bz = Math.floor((Math.min(z, z + dz) - pad) / 16); bz <= Math.floor((Math.max(z, z + dz) + pad) / 16); bz++)
+        for (const object of this.bins.get(`${bx},${bz}`) ?? []) found.add(object);
+    return [...found];
   }
 
   isFree(x, z, radius = 0.35) {
-    return this.objects.every(
+    return this.candidates(x, z, 0, 0, radius).every(
       (o) => Math.hypot(x - o.x, z - o.z) >= radius + o.radius - EPSILON,
     );
   }
@@ -39,7 +56,7 @@ export class StaticCollisions {
     // Recover small overlaps deterministically (e.g. after changing body radius).
     for (let pass = 0; pass < 4; pass++) {
       let changed = false;
-      for (const o of this.objects) {
+      for (const o of this.candidates(x, z, 0, 0, radius)) {
         const ox = x - o.x,
           oz = z - o.z;
         const distance = Math.hypot(ox, oz),
@@ -59,7 +76,7 @@ export class StaticCollisions {
       const lengthSquared = dx * dx + dz * dz;
       let firstTime = 1,
         hit = null;
-      for (const o of this.objects) {
+      for (const o of this.candidates(x, z, dx, dz, radius)) {
         const ox = x - o.x,
           oz = z - o.z,
           clearance = radius + o.radius;

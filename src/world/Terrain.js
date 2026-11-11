@@ -4,7 +4,7 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export class Terrain {
   constructor(seed = 12345) {
     this.seed = seed >>> 0;
-    this.size = 200;
+    this.size = 640;
   }
   hash(x, z) {
     const v = Math.sin(x * 127.1 + z * 311.7 + this.seed * 0.173) * 43758.5453;
@@ -25,17 +25,18 @@ export class Terrain {
   }
   height(x, z) {
     const angle = Math.atan2(z, x);
-    const radius = Math.hypot(x, z) / 84;
+    const radius = Math.hypot(x, z) / 275;
     const coastline =
       1 +
       0.09 * Math.sin(angle * 5 + this.seed) +
       0.06 * Math.cos(angle * 9 - this.seed);
     const mask = clamp((coastline - radius) * 5, 0, 1);
     const hills =
-      (this.noise(x * 0.024, z * 0.024) - 0.5) * 6.5 +
+      (this.noise(x * 0.008, z * 0.008) - 0.5) * 8 +
+      (this.noise(x * 0.024, z * 0.024) - 0.5) * 3 +
       (this.noise(x * 0.068 + 8, z * 0.068 - 13) - 0.5) * 1.2;
     // Broad wavelengths keep slopes traversable at a human walking speed.
-    return -2 + mask * (8 + hills);
+    return -2 + mask * (10 + hills);
   }
   findSpawn() {
     for (let radius = 0; radius <= 20; radius++)

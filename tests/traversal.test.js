@@ -121,8 +121,8 @@ test("world layout is seeded, uses clear spawn and game-target exclusions", () =
       layout.objects,
       new WorldLayout(terrain, { exclude: [excluded] }).objects,
     );
-    assert.equal(layout.objects.filter((o) => o.kind === "tree").length, 100);
-    assert.equal(layout.objects.filter((o) => o.kind === "rock").length, 24);
+    assert.equal(layout.objects.filter((o) => o.kind === "tree").length, 800);
+    assert.equal(layout.objects.filter((o) => o.kind === "rock").length, 160);
     const spawn = terrain.findSpawn();
     for (const o of layout.objects) {
       assert.ok(terrain.walkable(o.x, o.z));

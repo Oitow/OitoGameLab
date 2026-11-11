@@ -1,3 +1,4 @@
+import { Stats } from "./Stats.js";
 const MOVE_SPEED = 5.3;
 const JUMP_SPEED = 7.4;
 const GRAVITY = 19;
@@ -7,7 +8,9 @@ const MAX_SLOPE = Math.tan(Math.PI / 4);
 const GROUND_SNAP = 0.25;
 
 export class CharacterController {
-  constructor(terrain, { collisions = null, radius = 0.35 } = {}) {
+  constructor(terrain, { collisions = null, radius = 0.35, profile = {} } = {}) {
+    this.profile = profile;
+    this.stats = new Stats({ speed: profile.speed ?? MOVE_SPEED, jump: profile.jump ?? JUMP_SPEED, health: profile.health ?? 100, stamina: profile.stamina ?? 100 });
     this.terrain = terrain;
     this.collisions = collisions;
     this.radius = radius;
@@ -62,7 +65,7 @@ export class CharacterController {
       ? COYOTE_SECONDS
       : Math.max(0, this.coyoteRemaining - dt);
     if (this.jumpBufferRemaining > 0 && this.coyoteRemaining > 0) {
-      s.vy = JUMP_SPEED;
+      s.vy = this.stats.value("jump");
       s.grounded = false;
       this.jumpBufferRemaining = this.coyoteRemaining = 0;
     }
@@ -76,8 +79,8 @@ export class CharacterController {
       z /= length;
     }
     const blend = 1 - Math.exp(-(length > 0 ? 11 : 8) * dt);
-    s.vx += (x * MOVE_SPEED - s.vx) * blend;
-    s.vz += (z * MOVE_SPEED - s.vz) * blend;
+    s.vx += (x * this.stats.value("speed") - s.vx) * blend;
+    s.vz += (z * this.stats.value("speed") - s.vz) * blend;
 
     const oldX = s.x,
       oldZ = s.z;
@@ -132,6 +135,6 @@ export class CharacterController {
       s.facing +=
         Math.atan2(Math.sin(angle), Math.cos(angle)) * (1 - Math.exp(-13 * dt));
     }
-    s.phase = (s.phase + speed * dt * 2.6) % (Math.PI * 2);
+    s.phase = (s.phase + speed * dt * (this.profile.stride ?? 2.6)) % (Math.PI * 2);
   }
 }

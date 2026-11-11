@@ -1,6 +1,6 @@
 /** Stable seeded scenery data shared by rendering and collision adapters. */
 export class WorldLayout {
-  constructor(terrain, { exclude = [], treeCount = 100, rockCount = 24 } = {}) {
+  constructor(terrain, { exclude = [], treeCount = 800, rockCount = 160, decorationCount = 2400 } = {}) {
     this.objects = [];
     this.decorations = [];
     const spawn = terrain.findSpawn();
@@ -62,7 +62,7 @@ export class WorldLayout {
     }
     // Visual-only ground cover is deliberately independent of solid footprints.
     // Its separate sequence keeps object IDs stable when foliage budgets change.
-    for (let i = 0; i < 3000 && this.decorations.length < 500; i++) {
+    for (let i = 0; i < decorationCount * 8 && this.decorations.length < decorationCount; i++) {
       const x = (terrain.hash(i + 1591, 71) - 0.5) * extent * 2;
       const z = (terrain.hash(i + 1591, 97) - 0.5) * extent * 2;
       const y = terrain.height(x, z);

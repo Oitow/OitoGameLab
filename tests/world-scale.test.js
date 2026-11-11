@@ -7,7 +7,7 @@ import { StaticCollisions } from "../src/physics/StaticCollisions.js";
 test("human-scale island provides a broad, gently rolling interior and bounded shore", () => {
   for (const seed of [0, 1, 12345, 4294967295]) {
     const terrain = new Terrain(seed);
-    assert.equal(terrain.size, 200);
+    assert.equal(terrain.size, 640);
     for (let x = -45; x <= 45; x += 5)
       for (let z = -45; z <= 45; z += 5) {
         assert.ok(terrain.walkable(x, z));
@@ -15,9 +15,9 @@ test("human-scale island provides a broad, gently rolling interior and bounded s
         for (const [dx, dz] of [[0.5, 0], [0, 0.5]])
           assert.ok(Math.abs(terrain.height(x + dx, z + dz) - y) / 0.5 < 0.6);
       }
-    assert.ok(!terrain.walkable(101, 0));
-    assert.ok(!terrain.walkable(0, -101));
-    assert.ok(terrain.height(100, 100) < 0);
+    assert.ok(!terrain.walkable(321, 0));
+    assert.ok(!terrain.walkable(0, -321));
+    assert.ok(terrain.height(320, 320) < 0);
   }
 });
 
@@ -42,7 +42,7 @@ test("ground cover is deterministic, bounded and never adds solid colliders", ()
   const a = new WorldLayout(terrain, { exclude: [excluded] });
   const b = new WorldLayout(terrain, { exclude: [excluded] });
   assert.deepEqual(a.decorations, b.decorations);
-  assert.equal(a.decorations.length, 500);
+  assert.equal(a.decorations.length, 2400);
   const collisions = new StaticCollisions(a.objects);
   assert.equal(collisions.objects.length, a.objects.length);
   for (const plant of a.decorations) {

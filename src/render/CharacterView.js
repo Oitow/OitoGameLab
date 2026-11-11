@@ -1,8 +1,10 @@
 import * as THREE from "three";
+import { locomotionPose } from "../character/AnimationPose.js";
 
 /** Two-metre, feet-origin adventurer. All shapes are generated locally; no textures. */
 export class CharacterView {
-  constructor(scene) {
+  constructor(scene, profile = {}) {
+    this.profile = profile;
     this.group = new THREE.Group();
     this.body = new THREE.Group();
     this.head = new THREE.Group();
@@ -10,9 +12,9 @@ export class CharacterView {
     this.group.add(this.body);
     this.body.add(this.head);
     const mat = (color) => new THREE.MeshLambertMaterial({ color, flatShading: true });
-    const skin = mat(0xd9a078), tunic = mat(0x387c79),
+    const skin = mat(profile.skin ?? 0xd9a078), tunic = mat(profile.tunic ?? 0x387c79),
       trousers = mat(0x394953), leather = mat(0x654936),
-      dark = mat(0x263338), hair = mat(0x493a30), scarf = mat(0xcf8c49);
+      dark = mat(0x263338), hair = mat(profile.hair ?? 0x493a30), scarf = mat(0xcf8c49);
     const cylinder = (top, bottom, height, sides = 6) =>
       new THREE.CylinderGeometry(top, bottom, height, sides, 1);
     const part = (parent, geometry, material, x, y, z, sx = 1, sy = 1, sz = 1) => {
@@ -114,6 +116,7 @@ export class CharacterView {
       this.knees.push(knee);
       this.legs.push(leg);
     }
+    this.group.scale.set(profile.build ?? 1, (profile.height ?? 2) / 2, profile.build ?? 1);
     scene.add(this.group);
   }
   update(dt, state) {
@@ -129,26 +132,8 @@ export class CharacterView {
     const velocity = { x: state.vx, z: state.vz };
     const gait = Math.min(horizontalSpeed / speed, 1);
     const blend = 1 - Math.exp(-18 * dt);
-    const rising = this.verticalVelocity > 0;
     for (let i = 0; i < 2; i++) {
-      const stride = Math.sin(this.phase + i * Math.PI);
-      const recovery = Math.max(0, -Math.cos(this.phase + i * Math.PI));
-      const hip = this.grounded
-        ? stride * 0.65 * gait - this.landing * 0.28
-        : rising
-          ? -0.55
-          : -0.2;
-      const knee = this.grounded
-        ? recovery * 0.8 * gait + this.landing * 0.52
-        : rising
-          ? 0.9
-          : 0.35;
-      const shoulder = this.grounded
-        ? -stride * 0.5 * gait
-        : rising
-          ? -0.65
-          : -0.25;
-      const elbow = this.grounded ? -0.24 * gait : -0.75;
+      const { hip, knee, shoulder, elbow } = locomotionPose(state, i, this.profile.speed ?? 5.3);
       this.legs[i].rotation.x = THREE.MathUtils.lerp(
         this.legs[i].rotation.x,
         hip,

@@ -12,7 +12,7 @@ Renderers read simulation; simulation never imports rendering or a specific game
 
 ## Public contracts
 
-- `Terrain(seed)`: `height(x,z)`, `walkable(x,z)`, `findSpawn()`, deterministic `hash(x,z)` and `noise(x,z)`. uint32 seed, 200 m square, ocean at y=0.
+- `Terrain(seed)`: `height(x,z)`, `walkable(x,z)`, `findSpawn()`, deterministic `hash(x,z)` and `noise(x,z)`. uint32 seed, 640 m square, ocean at y=0.
 - `CharacterController(terrain)`: `state`, `step(seconds,{x,z,jump})`, `reset()`. Normalized movement, terrain contact, world-space jump/gravity, shoreline slide.
 - `FixedStep`: `advance(realSeconds, update)` at 60 Hz, maximum 5 catch-up steps, `reset()` on pause/resume. Return value is the interpolation fraction used by the renderer.
 - Game definition: `{id,name,create(terrain)}`. The resulting game has `markers: {id,x,y,z}[]`, `collected: number[]`, `step(dt,player)`, `status()`. This deliberately small contract suits the supplied examples; extend with tests when another genre needs it.
@@ -47,3 +47,16 @@ Terrain and layout remain pure seeded simulation. `WorldLayout` emits tree speci
 `MarkerView` presents crystals, resource pickups and a built/unbuilt campfire with shared geometry/materials; animation freezes at dt=0 and reads collected/built state.
 
 The camera samples the terrain along its sightline, without changing simulation. It does not resolve occlusion against tree canopies. Cheap contact shadows are separate geometry; there are no shadow maps, textures or postprocessing. Graphics settings change render resolution only, preserving world determinism and collision. Save format remains compatible structurally, but seeds regenerate a new world shape; old obstructed positions may fail existing validation.
+
+
+## 0.7 procedural contracts and scaling
+
+`Generator(seed, namespace)` provides `next`, `range`, `pick` and `fork`. Forks derive from immutable stream identity, never current consumption, so generation order cannot reshuffle unrelated systems. `createCharacterProfile(seed)` supplies immutable appearance/proportion and locomotion parameters. `Session.profile` is reconstructed from the world seed. `CharacterController.stats` owns computed speed/jump and optional bounded resources; rendering reads profile and state only. Modifier/resource mutations are transient and reset on load; add an explicit validated save DTO before using them for persistent progression.
+
+`locomotionPose(state, limbIndex, speed)` produces hip/knee/shoulder/elbow targets without depending on Three.js. Mesh articulation and smoothing stay in CharacterView. New character renderers can reuse the same targets.
+
+Terrain covers 640 m with roughly a 550 m coastline. Its rendering uses 100 chunks of 64 m, each a 32×32 grid (204,800 triangles total); independent bounding spheres enable view-frustum rejection. Scenery is partitioned into 128 m regions with instancing within each region. Fog ends at 210 m, camera far clip is 240 m. This is finite-world batching, not streaming or dynamic LOD; all GPU data is created at mount. Resolution controls remain independent of simulation.
+
+Static collision descriptors are indexed into 16 m bins. Queries cover the swept AABB expanded by the player radius and largest obstacle; exact circle sweeps remain the narrow phase. The bins affect lookup cost, not collision geometry. Layout must remain immutable after index creation.
+
+Camera distance uses a clamped 0.65–1.8 multiplier; look-ahead follows world velocity while camera orientation stays world-aligned for predictable joystick axes. Terrain clearance is retained; trees can still occlude the character. Joystick includes a 5 px dead zone.

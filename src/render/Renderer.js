@@ -13,7 +13,7 @@ export class Renderer {
     });
     this.setQuality("balanced");
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.camera = new THREE.PerspectiveCamera(55, 1, 0.1, 450);
+    this.camera = new THREE.PerspectiveCamera(55, 1, 0.1, 240);
     this.rig = new CameraRig(this.camera);
     this.markers = new Map();
     this.resize = () => {
@@ -53,8 +53,17 @@ export class Renderer {
     sun.position.set(-14, 26, 18);
     this.scene.add(sun);
     this.terrain = new TerrainView(this.scene, session.terrain);
-    this.scenery = new WorldObjects(this.scene, session.layout, session.terrain);
-    this.character = new CharacterView(this.scene);
+    // Spatial batches let Three.js reject whole groves outside the camera frustum.
+    const regions = new Map();
+    const region = (o) => {
+      const key = `${Math.floor(o.x / 128)},${Math.floor(o.z / 128)}`;
+      if (!regions.has(key)) regions.set(key, { objects: [], decorations: [] });
+      return regions.get(key);
+    };
+    for (const o of session.layout.objects) region(o).objects.push(o);
+    for (const o of session.layout.decorations) region(o).decorations.push(o);
+    this.scenery = [...regions.values()].map((layout) => new WorldObjects(this.scene, layout, session.terrain));
+    this.character = new CharacterView(this.scene, session.profile);
     this.contact = new THREE.Mesh(
       new THREE.CircleGeometry(0.48, 12),
       new THREE.MeshBasicMaterial({ color: 0x233c36, transparent: true, opacity: 0.23, depthWrite: false }),
@@ -74,7 +83,7 @@ export class Renderer {
     this.contact.position.set(pose.x, ground + 0.025, pose.z);
     this.contact.scale.setScalar(1 + lift * 0.15);
     this.contact.material.opacity = 0.23 / (1 + lift);
-    this.rig.update(dt, this.character.group.position, session.terrain);
+    this.rig.update(dt, this.character.group.position, session.terrain, pose);
     this.markerView.update(dt, session.game);
     this.renderer.render(this.scene, this.camera);
   }

@@ -1,5 +1,21 @@
 # Status — 2026-11-11
 
+## Implemented for 0.7
+
+- 640 m square seeded world (10.24× the previous area), roughly 550 m island, broad rolling hills.
+- 800 trees, 160 rocks and 2,400 ground decorations; 128 m spatial instance batches support frustum culling.
+- Terrain split into 100 independently culled 64 m chunks, 2 m mesh spacing. Entire bounded world is generated at mount, not streamed.
+- Static collision uses 16 m spatial bins with exact swept-circle narrow phase, including long moves.
+- Named deterministic random streams; immutable character profiles vary height, build, skin, clothing, hair and stride from the world seed.
+- Reusable stats with named modifiers and bounded resources; controller speed/jump consume computed stats. Health/stamina are extension points, not survival mechanics or saved progression.
+- Pure locomotion pose module drives articulated mesh animation.
+- Joystick dead zone removes small accidental drift. Camera has smoothed focus, velocity look-ahead, terrain clearance and a distance slider.
+- World seeds change landscape/scenery again. Version 2 saves remain structurally compatible, but obstructed positions may be rejected; no world migration.
+
+## 0.7 validation
+
+Two unit-suite invocations: first caught terrain-range and outdated budget assertions; second passed all 46 tests. One syntax/import/boundary check passed. One local browser attempt failed before opening a page because Chromium cannot create its process socket in this environment. Browser screenshots, visual/input validation and real Android performance remain unverified locally. PR CI is the remaining browser validation round; no FPS guarantee.
+
 ## Implemented for 0.6
 
 - 200 m seeded world with broad rolling interior and an island roughly 180 m across.

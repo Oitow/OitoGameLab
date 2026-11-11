@@ -110,7 +110,7 @@ export class Input {
     const x = e.clientX - (rect.left + rect.width / 2);
     const y = e.clientY - (rect.top + rect.height / 2);
     const length = Math.hypot(x, y);
-    const scale = Math.min(1, length / 44);
+    const scale = Math.max(0, Math.min(1, (length - 5) / 39));
     this.touch.set(
       length ? (x / length) * scale : 0,
       length ? (-y / length) * scale : 0,
