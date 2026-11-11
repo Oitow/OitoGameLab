@@ -1,64 +1,116 @@
 import * as THREE from "three";
-// Procedural humanoid with joint pivots and no external assets.
+
+/** Two-metre, feet-origin adventurer. All shapes are generated locally; no textures. */
 export class CharacterView {
   constructor(scene) {
     this.group = new THREE.Group();
     this.body = new THREE.Group();
+    this.head = new THREE.Group();
+    this.head.position.y = 1.765;
     this.group.add(this.body);
-    const mat = (c) => new THREE.MeshLambertMaterial({ color: c });
-    const skin = mat(0xf3c69d),
-      shirt = mat(0xe49a47),
-      pants = mat(0x344a60),
-      boots = mat(0x292e37);
-    const part = (parent, geo, material, x, y, z) => {
-      const mesh = new THREE.Mesh(geo, material);
+    this.body.add(this.head);
+    const mat = (color) => new THREE.MeshLambertMaterial({ color, flatShading: true });
+    const skin = mat(0xd9a078), tunic = mat(0x387c79),
+      trousers = mat(0x394953), leather = mat(0x654936),
+      dark = mat(0x263338), hair = mat(0x493a30), scarf = mat(0xcf8c49);
+    const cylinder = (top, bottom, height, sides = 6) =>
+      new THREE.CylinderGeometry(top, bottom, height, sides, 1);
+    const part = (parent, geometry, material, x, y, z, sx = 1, sy = 1, sz = 1) => {
+      const mesh = new THREE.Mesh(geometry, material);
       mesh.position.set(x, y, z);
+      mesh.scale.set(sx, sy, sz);
       parent.add(mesh);
       return mesh;
     };
-    part(this.body, new THREE.BoxGeometry(0.76, 0.85, 0.38), shirt, 0, 1.35, 0);
-    part(this.body, new THREE.BoxGeometry(0.24, 0.23, 0.24), skin, 0, 1.9, 0);
-    this.head = part(
-      this.body,
-      new THREE.SphereGeometry(0.32, 12, 8),
-      skin,
-      0,
-      2.17,
-      0,
-    );
-    part(
-      this.body,
-      new THREE.BoxGeometry(0.19, 0.1, 0.1),
-      mat(0x684b37),
-      0,
-      2.14,
-      0.3,
-    );
+    // Batch static details by material so adding silhouette detail does not add
+    // one draw call per buckle, eye or strap. Preserve each polygon's normals.
+    const batch = (parent, build) => {
+      const temporary = new THREE.Group();
+      build(temporary);
+      const groups = new Map();
+      for (const mesh of temporary.children) {
+        mesh.updateMatrix();
+        const geometry = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry.clone();
+        geometry.applyMatrix4(mesh.matrix);
+        const entries = groups.get(mesh.material) || [];
+        entries.push(geometry);
+        groups.set(mesh.material, entries);
+        mesh.geometry.dispose();
+      }
+      for (const [material, entries] of groups) {
+        const geometry = new THREE.BufferGeometry();
+        for (const name of ["position", "normal"]) {
+          const length = entries.reduce((sum, entry) => sum + entry.getAttribute(name).array.length, 0);
+          const values = new Float32Array(length);
+          let offset = 0;
+          for (const entry of entries) {
+            const source = entry.getAttribute(name).array;
+            values.set(source, offset);
+            offset += source.length;
+          }
+          geometry.setAttribute(name, new THREE.BufferAttribute(values, 3));
+        }
+        entries.forEach((entry) => entry.dispose());
+        parent.add(new THREE.Mesh(geometry, material));
+      }
+    };
+    batch(this.body, (g) => {
+      part(g, cylinder(0.34, 0.27, 0.55, 8), tunic, 0, 1.245, 0, 1, 1, 0.62);
+      part(g, cylinder(0.27, 0.32, 0.18, 8), tunic, 0, 0.98, 0, 1, 1, 0.67);
+      part(g, cylinder(0.283, 0.283, 0.07, 8), leather, 0, 1.065, 0, 1, 1, 0.68);
+      part(g, new THREE.BoxGeometry(0.09, 0.065, 0.025), scarf, 0, 1.065, 0.195);
+      part(g, cylinder(0.095, 0.11, 0.15), skin, 0, 1.575, 0);
+      part(g, cylinder(0.16, 0.14, 0.11, 8), scarf, 0, 1.54, 0, 1, 1, 0.85);
+      part(g, new THREE.ConeGeometry(0.12, 0.26, 3), scarf, 0.09, 1.38, 0.2, 0.7, 1, 0.25);
+      // Leather pack and rolled blanket sit against the back, facing -Z.
+      part(g, cylinder(0.23, 0.21, 0.43, 8), leather, 0, 1.29, -0.25, 1, 1, 0.6);
+      const roll = part(g, cylinder(0.09, 0.09, 0.51, 8), scarf, 0, 1.55, -0.27);
+      roll.rotation.z = Math.PI / 2;
+      for (const side of [-1, 1]) {
+        const strap = part(g, new THREE.BoxGeometry(0.045, 0.45, 0.035), leather, side * 0.205, 1.31, 0.18);
+        strap.rotation.z = side * -0.13;
+      }
+    });
+    batch(this.head, (g) => {
+      part(g, new THREE.SphereGeometry(0.225, 8, 6), skin, 0, 0, 0, 0.83, 1, 0.85);
+      part(g, new THREE.SphereGeometry(0.235, 8, 4, 0, Math.PI * 2, 0, Math.PI * 0.57), hair, 0, 0, -0.012, 0.88, 1, 0.87);
+      for (const side of [-1, 1]) {
+        part(g, new THREE.OctahedronGeometry(0.042), skin, side * 0.186, -0.025, 0, 0.5, 1, 0.8);
+        part(g, new THREE.BoxGeometry(0.032, 0.026, 0.016), dark, side * 0.066, 0.012, 0.174);
+        const brow = part(g, new THREE.BoxGeometry(0.05, 0.017, 0.018), hair, side * 0.066, 0.055, 0.169);
+        brow.rotation.z = side * -0.08;
+      }
+      part(g, new THREE.ConeGeometry(0.037, 0.07, 4), skin, 0, -0.02, 0.188).rotation.x = Math.PI / 2;
+    });
     this.arms = [];
     this.elbows = [];
     this.legs = [];
     this.knees = [];
+    const sleeve = cylinder(0.115, 0.09, 0.28), forearm = cylinder(0.085, 0.061, 0.25),
+      hand = new THREE.IcosahedronGeometry(0.078, 0), thigh = cylinder(0.13, 0.10, 0.41),
+      shin = cylinder(0.10, 0.073, 0.35), boot = cylinder(0.105, 0.115, 0.21, 8);
     for (const side of [-1, 1]) {
       const arm = new THREE.Group();
-      arm.position.set(side * 0.5, 1.72, 0);
+      arm.position.set(side * 0.355, 1.48, 0);
+      arm.rotation.z = side * 0.07;
       this.body.add(arm);
-      part(arm, new THREE.BoxGeometry(0.24, 0.38, 0.27), shirt, 0, -0.18, 0);
+      part(arm, sleeve, tunic, 0, -0.14, 0, 1, 1, 0.92);
       const elbow = new THREE.Group();
-      elbow.position.y = -0.35;
+      elbow.position.y = -0.28;
       arm.add(elbow);
-      part(elbow, new THREE.BoxGeometry(0.18, 0.28, 0.2), skin, 0, -0.13, 0);
-      part(elbow, new THREE.BoxGeometry(0.21, 0.17, 0.23), skin, 0, -0.32, 0);
+      part(elbow, forearm, skin, 0, -0.125, 0, 1, 1, 0.9);
+      part(elbow, hand, leather, 0, -0.285, 0, 0.85, 1.15, 0.8);
       this.elbows.push(elbow);
       this.arms.push(arm);
       const leg = new THREE.Group();
-      leg.position.set(side * 0.22, 0.95, 0);
+      leg.position.set(side * 0.145, 0.96, 0);
       this.body.add(leg);
-      part(leg, new THREE.BoxGeometry(0.28, 0.46, 0.31), pants, 0, -0.21, 0);
+      part(leg, thigh, trousers, 0, -0.205, 0, 1, 1, 1.05);
       const knee = new THREE.Group();
       knee.position.y = -0.43;
       leg.add(knee);
-      part(knee, new THREE.BoxGeometry(0.23, 0.36, 0.25), pants, 0, -0.17, 0);
-      part(knee, new THREE.BoxGeometry(0.3, 0.2, 0.43), boots, 0, -0.42, 0.09);
+      part(knee, shin, trousers, 0, -0.175, 0);
+      part(knee, boot, dark, 0, -0.425, 0.045, 1, 1, 1.55);
       this.knees.push(knee);
       this.legs.push(leg);
     }

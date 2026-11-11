@@ -3,16 +3,15 @@ export class TerrainView {
   constructor(scene, terrain) {
     this.scene = scene;
     this.terrain = terrain;
-    this.size = 70;
-    this.segments = 72;
+    this.size = terrain.size;
+    this.segments = 160;
     this.mesh = null;
     this.water = new THREE.Mesh(
-      new THREE.PlaneGeometry(200, 200),
+      new THREE.PlaneGeometry(900, 900),
       new THREE.MeshLambertMaterial({
-        color: 0x419fc2,
+        color: 0x508e9c,
         side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.9,
+
       }),
     );
     this.water.rotation.x = -Math.PI / 2;
@@ -49,12 +48,12 @@ export class TerrainView {
         positions[i + 2] = wz;
         color.setHex(
           h < 0.35
-            ? 0x648e83
+            ? 0x668d83
             : h < 1.25
-              ? 0xe4ca91
+              ? 0xd0bc8a
               : h < 4.4
-                ? 0x77ab5e
-                : 0x547d49,
+                ? 0x819568
+                : 0x6a805d,
         );
         const variation = 0.94 + this.noise(wx * 0.31, wz * 0.31) * 0.12;
         colors[i] = color.r * variation;
@@ -78,6 +77,7 @@ export class TerrainView {
       geometry,
       new THREE.MeshLambertMaterial({
         vertexColors: true,
+        flatShading: true,
         side: THREE.DoubleSide,
       }),
     );

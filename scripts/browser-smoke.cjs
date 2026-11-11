@@ -32,7 +32,7 @@ const SAVE_KEY = "oito.save.v2";
       });
     });
     await mkdir("test-results", { recursive: true });
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({ headless: true, ...(process.env.OITO_CHROMIUM_PATH ? { executablePath: process.env.OITO_CHROMIUM_PATH } : {}) });
     page = await browser.newPage({
       viewport: { width: 390, height: 844 },
       isMobile: true,
@@ -51,6 +51,7 @@ const SAVE_KEY = "oito.save.v2";
         "Erkunde deine Insel",
     );
     assert.equal(await page.locator("#error").isVisible(), false);
+    await page.waitForTimeout(350);
     await page.screenshot({ path: "test-results/portrait.png" });
     const openSettings = async () => {
       if (
@@ -192,6 +193,9 @@ const SAVE_KEY = "oito.save.v2";
     );
     await page.screenshot({ path: "test-results/camp.png" });
     await openSettings();
+    await page.selectOption("#quality", "economy");
+    await page.selectOption("#quality", "crisp");
+    await page.selectOption("#quality", "balanced");
     const bounds = await page.locator("#settings section").boundingBox();
     assert.ok(
       bounds.x >= 0 &&

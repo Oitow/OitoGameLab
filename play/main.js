@@ -72,6 +72,7 @@ try {
     if (paused) $("#settings").open = false;
     setPaused(!paused);
   };
+  $("#quality").onchange = () => renderer.setQuality($("#quality").value);
   $("#save").onclick = save;
   $("#load").onclick = () => {
     try {
@@ -145,7 +146,7 @@ try {
     if (uiTime >= 0.5) {
       $("#objective").textContent = session.game.status();
       $("#stats").textContent =
-        `${Math.round(frames / uiTime)} FPS · ${renderer.renderer.info.render.calls} Draw Calls · Seed ${session.terrain.seed}`;
+        `${Math.round(frames / uiTime)} FPS · ${renderer.renderer.info.render.calls} Draw Calls · ${renderer.renderer.info.render.triangles} Dreiecke · ${session.terrain.size} m · Seed ${session.terrain.seed}`;
       uiTime = 0;
       frames = 0;
     }
