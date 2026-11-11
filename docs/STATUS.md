@@ -1,27 +1,25 @@
-# Status — 2026-11-10
+# Status — 2026-11-11
 
-## Implemented in the 0.4 restart
+## Implemented for 0.5
 
-- Shared pure simulation, fixed 60 Hz clock, seeded island, character controller.
-- Three.js rendering adapter with separate procedural character animation and camera.
-- Explorer and crystal hunt using the same engine; seeded collectibles and win feedback.
-- Touch + keyboard, jump, pause, world seed controls, mode switch, local save/load.
-- Resource cleanup on scene replacement, WebGL context-loss pause and rebuild.
-- Root launcher; original engine and island-explorer preserved.
-- Automated behavioral tests, syntax/import/boundary checks, CI, issue and PR templates, agent role instructions.
+- Shared pure simulation with render interpolation and seeded world layout.
+- Static tree/rock footprints shared by collision and rendering; sliding and swept collision.
+- Slope limits, ledge falling, coyote time and buffered jumps.
+- Explorer, crystal hunt and camp-building game registered in one module registry.
+- Reusable inventory and contextual interactions, keyboard E and touch action.
+- Version 2 game-specific saves, validation before state replacement and version 1 import.
+- Dependency-free new-game generator, safety checks and contribution guide.
+- Expanded tests for traversal, interaction, inventory, input, saves and scaffolding.
+- Browser coverage for pause/blur, context loss/restoration, settings, modes and storage.
 
 ## Validation
 
-Local validation: 10 behavioral tests passed, plus syntax/import/boundary checks. Local Chromium could not launch because the runtime denied socket creation; the remote browser could not reach the local server. Automated browser checks are included in CI; their result is reported in the implementation PR. Viewport emulation does not count as real Android testing. Current runtime still needs network access to the pinned Three.js CDN.
+See the implementation PR and GitHub Actions run for final automated results and screenshots. Real Android testing remains a manual gate. Runtime requires the pinned Three.js CDN.
 
-## Next milestones (not implemented)
+## Boundaries
 
-1. Real Android playtest: joystick reach, camera framing, sustained performance.
-2. Character traversal: slope limits, collision adapter, obstacles; introduce Rapier when solid 3D collision is needed.
-3. World generation v2: biome parameters, chunk streaming only after profiling.
-4. Third game: one mechanic (fishing or mining); extract inventory/interaction only when actual gameplay requires it.
-5. Asset manifest, GLB loading and quality presets with measured budgets.
+Collisions are static X/Z footprints, not rigid-body physics. No landing on obstacles, terrain editing, NPCs, combat, chunk streaming, multiplayer or offline asset cache. Agent roles and the generator help explicit development tasks; they are not permanent background workers.
 
-## Known limits
+## Next
 
-Decorative trees have no collision. No combat, inventory, NPC behavior, terrain editing, network play, editor or offline asset cache. One browser-local save slot; no old-version migrations. The game contract is intentionally small and not a universal plugin architecture. Repository agent files do not run themselves.
+Real Android playtest; camera and movement tuning from device feedback; asset manifest and GLB loading; a larger mechanics-focused game using the shared systems.

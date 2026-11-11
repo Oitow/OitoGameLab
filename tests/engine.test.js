@@ -112,8 +112,8 @@ test("invalid saves are rejected without modifying session", () => {
     { seed: 3 },
     { player: { x: NaN, z: 0 } },
     { player: { x: 999, z: 999 } },
-    { collected: [999] },
-    { collected: null },
+    { state: { collected: [999] } },
+    { state: { collected: null } },
   ]) {
     assert.equal(s.restore({ ...before, ...patch }), false);
     assert.deepEqual(s.snapshot(), before);

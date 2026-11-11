@@ -29,3 +29,13 @@ Terrain collision uses the analytical height function; rendered mesh approximate
 ## Assets and performance
 
 Current assets are procedural meshes, no external artwork. Future shipped models use GLB/glTF, named manifest keys and separate collision proxies. Do not commit DCC source as runtime assets. Pixel ratio capped at 1.5, instanced trees, no postprocessing or shadow maps. Use real-device measurements before setting FPS guarantees. Diagnostics expose FPS and draw calls in the collapsed menu.
+
+## 0.5 traversal, game modules and storage
+
+`WorldLayout` owns seeded tree/rock descriptors used by both rendering and `StaticCollisions`. The collision adapter sweeps a character circle along X/Z and slides against static footprints; obstacles stay solid while jumping. This is limited 2.5D obstruction, with no rigid-body dynamics or landing on rocks. The controller also limits uphill slopes, supports ledge falls, 100 ms coyote time and 120 ms jump buffering.
+
+`Session` injects the collision adapter and exposes interpolated render poses without modifying simulation. Game definitions live in `games/registry.js`. `Inventory` and `InteractionSystem` are reusable pure systems demonstrated by the camp game: gather wood/stone and spend them at camp. E or the touch action button interacts.
+
+Save DTO version 2 stores game-specific validated data in `state`. `SaveStore` injects browser storage and validates into a new session before replacing the active one. Legacy explorer/scavenger version 1 saves are accepted; an old position newly blocked by scenery returns to safe spawn. New obstructed saves are rejected. Only one slot is stored.
+
+Use `npm run new:game -- my-game "My Game"` to generate a game module; see `NEW_GAME.md`. Register it once and the menu updates automatically.
