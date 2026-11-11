@@ -213,20 +213,26 @@ const SAVE_KEY = "oito.save.v2";
     await page.screenshot({ path: "test-results/settings-portrait.png" });
     await page.locator("#pause").click();
     await openSettings();
-    await page.locator("#camera-distance").fill("0.65");
-    await page.locator("#camera-distance").dispatchEvent("input");
+    await page.locator("#camera-distance").evaluate((element) => {
+      element.value = "0.65";
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+    });
     await page.locator("#pause").click();
     await page.waitForTimeout(650);
     await page.screenshot({ path: "test-results/camera-close.png" });
     await openSettings();
-    await page.locator("#camera-distance").fill("1.8");
-    await page.locator("#camera-distance").dispatchEvent("input");
+    await page.locator("#camera-distance").evaluate((element) => {
+      element.value = "1.8";
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+    });
     await page.locator("#pause").click();
     await page.waitForTimeout(650);
     await page.screenshot({ path: "test-results/camera-far.png" });
     await openSettings();
-    await page.locator("#camera-distance").fill("1");
-    await page.locator("#camera-distance").dispatchEvent("input");
+    await page.locator("#camera-distance").evaluate((element) => {
+      element.value = "1";
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+    });
     await page.locator("#pause").click();
     await page.waitForTimeout(650);
 
