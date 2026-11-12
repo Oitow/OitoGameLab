@@ -194,7 +194,14 @@ const SAVE_KEY = "oito.save.v2";
     await page.screenshot({ path: "test-results/camp.png" });
     await openSettings();
     await page.selectOption("#quality", "economy");
+    await page.waitForTimeout(650);
+    const triangleCount = async () => Number((await page.locator("#stats").textContent()).match(/· (\d+) Dreiecke/)[1]);
+    const economyTriangles = await triangleCount();
     await page.selectOption("#quality", "crisp");
+    await page.waitForTimeout(650);
+    const crispTriangles = await triangleCount();
+    assert.ok(economyTriangles < crispTriangles, "economy lowers submitted terrain detail without changing the world");
+    console.log(`Terrain quality: economy ${economyTriangles} vs crisp ${crispTriangles} submitted triangles`);
     await page.selectOption("#quality", "balanced");
     const bounds = await page.locator("#settings section").boundingBox();
     assert.ok(
@@ -205,6 +212,30 @@ const SAVE_KEY = "oito.save.v2";
     );
     await page.screenshot({ path: "test-results/settings-portrait.png" });
     await page.locator("#pause").click();
+    await openSettings();
+    await page.locator("#camera-distance").evaluate((element) => {
+      element.value = "0.65";
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await page.locator("#pause").click();
+    await page.waitForTimeout(650);
+    await page.screenshot({ path: "test-results/camera-close.png" });
+    await openSettings();
+    await page.locator("#camera-distance").evaluate((element) => {
+      element.value = "1.8";
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await page.locator("#pause").click();
+    await page.waitForTimeout(650);
+    await page.screenshot({ path: "test-results/camera-far.png" });
+    await openSettings();
+    await page.locator("#camera-distance").evaluate((element) => {
+      element.value = "1";
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await page.locator("#pause").click();
+    await page.waitForTimeout(650);
+
 
     // A completed save exercises the built campfire view and hides all pickups.
     const completedCamp = await snapshot(false);

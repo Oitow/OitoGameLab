@@ -60,3 +60,12 @@ Terrain covers 640 m with roughly a 550 m coastline. Its rendering uses 100 chun
 Static collision descriptors are indexed into 16 m bins. Queries cover the swept AABB expanded by the player radius and largest obstacle; exact circle sweeps remain the narrow phase. The bins affect lookup cost, not collision geometry. Layout must remain immutable after index creation.
 
 Camera distance uses a clamped 0.65–1.8 multiplier; look-ahead follows world velocity while camera orientation stays world-aligned for predictable joystick axes. Terrain clearance is retained; trees can still occlude the character. Joystick includes a 5 px dead zone.
+
+
+## 0.8 distance-based terrain detail
+
+`TerrainGeometry.terrainChunk(terrain, originX, originZ, size, segments, skirtDepth)` builds CPU-only mesh buffers in chunk-local coordinates. It reads the analytical heightfield. Surface grids use 32, 16 and 8 segments per 64 m chunk; boundary samples nest exactly across levels. A downward perimeter skirt covers the gap between coarse interpolation and neighbouring fine edges. This is a rendering technique, not solid geometry for collision.
+
+`TerrainView` owns 100 Three.js LOD groups and one shared terrain material. Groups sit at their chunk centres; Three.js selects levels from camera distance, with 12% hysteresis. Economy thresholds are 64/128 m, balanced 96/176 m, crisp 128/208 m. All levels are prebuilt at mount, so memory/mount costs increase; streaming remains future work. Existing scene disposal traverses all level geometries and deduplicates materials.
+
+Graphics changes update level thresholds and pixel ratio without rebuilding simulation or scenery. Nearby ground keeps the previous 2 m spacing. Submitted triangle counts can be compared in the existing diagnostics. These counts demonstrate GPU workload reduction, not a guaranteed FPS improvement on any particular device.
