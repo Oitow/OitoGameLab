@@ -1,0 +1,21 @@
+.rift-hud{position:absolute;inset:0;pointer-events:none;color:#fff1d3;font:600 12px system-ui,sans-serif}
+.rift-hud.hurt{box-shadow:inset 0 0 42px #c4483980}
+.rift-vitals{position:absolute;left:max(19px,env(safe-area-inset-left));top:calc(max(20px,env(safe-area-inset-top)) + clamp(28px,5vw,45px) + 64px);display:flex;align-items:center;gap:7px;padding:4px 8px;border:1px solid #ead3aa50;border-radius:4px;background:#142d31e6;font-size:11px}
+.rift-vitals i{color:#ff8d79;font-style:normal}
+.rift-vitals progress{width:48px;height:5px;appearance:none;border:0;border-radius:2px;overflow:hidden;background:#3e4846;color:#f8a38a}
+.rift-vitals progress::-webkit-progress-bar{background:#3e4846}
+.rift-vitals progress::-webkit-progress-value{background:#f8a38a}
+.rift-vitals progress::-moz-progress-bar{background:#f8a38a}
+.rift-runes{color:#f7d58d;letter-spacing:1px}
+.rift-kills{border-left:1px solid #f5dba555;padding-left:6px;color:#dcf2e8}
+.rift-notice{position:absolute;left:max(19px,env(safe-area-inset-left));top:calc(max(20px,env(safe-area-inset-top)) + clamp(28px,5vw,45px) + 91px);color:#fff4cf;text-shadow:0 1px 4px #102426,0 1px 8px #102426;font-weight:600}
+.rift-actions{position:absolute;right:max(17px,env(safe-area-inset-right));bottom:calc(max(26px,env(safe-area-inset-bottom)) + 79px);display:flex;align-items:flex-end;gap:7px}
+.rift-action{pointer-events:auto;touch-action:manipulation;position:relative;border-radius:50%;border:1px solid #e9d293aa;width:57px;height:57px;color:#ffebbe;background:linear-gradient(150deg,#3e5048ec,#182f34f5);display:grid;place-content:center;justify-items:center;gap:0;padding:0;box-shadow:0 2px 7px #17242666;font:600 10px system-ui}
+.rift-action strong{font:700 22px/23px Georgia,serif;color:#ffdf94}
+.rift-action small{position:absolute;top:0;right:0;background:#21393b;border:1px solid #ded2a077;border-radius:8px;min-width:13px;padding:0 2px;font:600 9px/12px system-ui}
+.rift-action.rift-rift{bottom:17px;width:62px;height:62px;color:#c9fff1;border-color:#a0ded6;background:linear-gradient(150deg,#375658ef,#163738f5)}
+.rift-rift strong{color:#acf8ec}
+.rift-action.cooling{filter:saturate(.4);opacity:.72}
+.rift-action:active{transform:scale(.93)}
+#hint{bottom:calc(max(26px,env(safe-area-inset-bottom)) + 166px)}
+@media(max-height:490px){.rift-notice{display:none}.rift-action{width:47px;height:47px}.rift-action.rift-rift{width:50px;height:50px;bottom:4px}.rift-actions{bottom:calc(max(26px,env(safe-area-inset-bottom)) + 67px)}}
