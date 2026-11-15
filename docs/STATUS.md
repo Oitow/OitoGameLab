@@ -1,5 +1,9 @@
 # Status — 2026-11-11
 
+## Erlenwacht · 2026-11-15
+
+[Erlenwacht](../prototypes/erlenwacht/index.html) is a standalone portrait island adventure. Follow the lanterns from Windkap through Dämmerforst to Sonnenweide. Open the HTML file directly or serve it with the repository dev server.
+
 ## Implemented for 0.8
 
 - Terrain chunks now select 2 m / 4 m / 8 m mesh spacing by camera distance. Near terrain retains the 0.7 detail.
