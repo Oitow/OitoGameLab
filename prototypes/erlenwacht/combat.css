@@ -19,3 +19,6 @@
 .rift-action:active{transform:scale(.93)}
 #hint{bottom:calc(max(26px,env(safe-area-inset-bottom)) + 166px)}
 @media(max-height:490px){.rift-notice{display:none}.rift-action{width:47px;height:47px}.rift-action.rift-rift{width:50px;height:50px;bottom:4px}.rift-actions{bottom:calc(max(26px,env(safe-area-inset-bottom)) + 67px)}}
+
+.rift-action.rift-dash{position:absolute;right:0;bottom:calc(100% + 20px);width:50px;height:50px;color:#def4de;background:#29493eeb}
+@media(max-width:520px){#hint{bottom:calc(max(26px,env(safe-area-inset-bottom)) + 230px)}}

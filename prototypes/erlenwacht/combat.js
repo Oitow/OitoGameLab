@@ -3,7 +3,8 @@ globalThis.ErlenCombat = (() => {
   const TAU = Math.PI * 2;
   const abilities = [
     {id:'cut', key:'1', icon:'⟋', name:'Sichel', detail:'Runensichel · Gegner markieren', cooldown:.62},
-    {id:'rift', key:'2', icon:'✦', name:'Bruch', detail:'Siegelbruch · Marken sprengen', cooldown:3.6}
+    {id:'rift', key:'2', icon:'✦', name:'Bruch', detail:'Siegelbruch · Marken sprengen', cooldown:3.6},
+    {id:'dash', key:'3', icon:'➜', name:'Schritt', detail:'Runenschritt · Ausweichen', cooldown:2.4}
   ];
   const maxEnemies = 32;
   let state, controls;
@@ -16,7 +17,7 @@ globalThis.ErlenCombat = (() => {
     const anchors = encounters?.length ? encounters : [place(spawn.x+Math.sin(facing)*14,spawn.z+Math.cos(facing)*14)];
     state = {
       ground, walkable, spawn, enemies:[], camps:anchors.map((p,index)=>({...p,firstWave:5+index*3,remaining:0,round:0,waiting:false})),
-      age:0, hp:100, kills:0, charge:2, id:0, cutReady:0, riftReady:0,
+      age:0, hp:100, kills:0, charge:2, id:0, cutReady:0, riftReady:0, dashReady:0,
       castUntil:0, aimYaw:null, nextHurt:0, lastHurt:-10, shield:1.5, effects:[], pending:new Set(),
       player:spawn, uiAt:0, notice:'Sichel markiert · Bruch sprengt', noticeUntil:7, fallen:0
     };
@@ -38,7 +39,7 @@ globalThis.ErlenCombat = (() => {
       return button;
     });
     window.addEventListener('keydown',event=>{
-      const ability=abilities.find(a=>event.code==='Digit'+a.key||event.code==='Numpad'+a.key);
+      const ability=event.code==='Space'?abilities[2]:abilities.find(a=>event.code==='Digit'+a.key||event.code==='Numpad'+a.key);
       if(ability&&!event.repeat){event.preventDefault();state.pending.add(ability.id)}
     },{signal:signal.signal});
     window.addEventListener('blur',()=>state?.pending.clear(),{signal:signal.signal});
@@ -125,6 +126,20 @@ globalThis.ErlenCombat = (() => {
     }
     state.uiAt=0;
   }
+  function dodge(player){
+    if(state.age<state.dashReady)return false;
+    state.dashReady=state.age+abilities[2].cooldown;
+    state.shield=Math.max(state.shield,state.age+.14);
+    state.uiAt=0;
+    const threatened=state.enemies.some(e=>e.winding>=state.age && e.winding-state.age<=.22 &&
+      e.aim && dist(player,e.aim)<1.9);
+    if(threatened){
+      state.charge=Math.min(3,state.charge+1);
+      state.riftReady=state.age;
+      say('Perfekt ausgewichen · Bruch bereit',1.6);
+    }
+    return true;
+  }
   function moveSpirit(e,dx,dz){
     if(state.walkable(e.x+dx,e.z+dz)){e.x+=dx;e.z+=dz;return}
     if(state.walkable(e.x+dx,e.z))e.x+=dx;
@@ -156,7 +171,7 @@ globalThis.ErlenCombat = (() => {
   }
   function update(dt,player){
     if(!state)return {cast:0,aimYaw:null,respawn:null};
-    state.age+=dt;state.player=player;let respawn=null;
+    state.age+=dt;state.player=player;let respawn=null,dashed=false;
     if(state.fallen&&state.age>=state.fallen){
       respawn=place(state.spawn.x,state.spawn.z);state.hp=100;state.charge=2;state.shield=state.age+3;
       state.fallen=0;state.enemies=[];state.effects=[];
@@ -171,7 +186,8 @@ globalThis.ErlenCombat = (() => {
           camp.waiting=false;camp.remaining=state.age+3;camp.round=Math.max(0,camp.round-1);
         }
       }
-      for(const kind of state.pending)attack(kind,player);
+      if(state.pending.has('dash'))dashed=dodge(player);
+      for(const kind of state.pending)if(kind!=='dash')attack(kind,player);
       state.enemies=state.enemies.filter(e=>e.hp>0);
       for(const e of state.enemies){stepEnemy(e,dt,player);if(state.fallen)break}
       for(const camp of state.camps)if(camp.waiting&&!state.enemies.some(e=>e.camp===camp)){
@@ -184,7 +200,7 @@ globalThis.ErlenCombat = (() => {
     state.effects=state.effects.filter(f=>state.age-f.start<f.life);
     if(state.age>=state.uiAt){refreshHud();state.uiAt=state.age+.12}
     const cast=Math.max(0,Math.min(1,(state.castUntil-state.age)*4.2));
-    return {cast,aimYaw:cast?state.aimYaw:null,respawn};
+    return {cast,aimYaw:cast?state.aimYaw:null,respawn,dashed};
   }
   function refreshHud(){
     controls.health.value=health();
@@ -197,7 +213,7 @@ globalThis.ErlenCombat = (() => {
     if(controls.notice.textContent!==notice)controls.notice.textContent=notice;
     controls.root.classList.toggle('hurt',state.age-state.lastHurt<.32);
     for(let i=0;i<abilities.length;i++){
-      const ready=i===0?state.cutReady:state.riftReady,remaining=Math.max(0,ready-state.age);
+      const ready=state[abilities[i].id+'Ready'],remaining=Math.max(0,ready-state.age);
       const blocked=!!state.fallen||remaining>0||(i===1&&state.charge<1);
       const b=controls.buttons[i];b.setAttribute('aria-disabled',String(blocked));b.classList.toggle('cooling',blocked);
       b.querySelector('small').textContent=remaining>0?remaining.toFixed(1):abilities[i].key;

@@ -4,7 +4,7 @@
 
 [Erlenwacht](../prototypes/erlenwacht/index.html) is a standalone portrait action adventure. The seeded island spans roughly 452 × 582 metres. Follow the lanterns from Windkap through Hirschgrund and Dämmerforst to the willow on Sonnenweide. A numeric URL seed (for example `?seed=17`) changes the terrain and vegetation. Open the HTML with its sibling scripts and stylesheet present, or serve the repository with `npm run dev`.
 
-World layout, procedural art, character posing, combat and the renderer live in separate scripts. The map is generated on load. Spatial batches omit distant details, and the Canvas renderer supports devices without WebGL. The character uses two-joint legs and blends movement with casting. Six clearings contain repeatable encounters. Use Sichel (1) to mark a group, then Bruch (2) to detonate the marks. Later clearings start with larger groups, and repeat waves grow to 32 simultaneous spirits.
+World layout, procedural art, character posing, combat and the renderer live in separate scripts. The map is generated on load. Spatial batches omit distant details, and the Canvas renderer supports devices without WebGL. The character uses two-joint legs and blends movement with casting. Six clearings contain repeatable encounters. Use Sichel (1) to mark a group, then Bruch (2) to detonate the marks. Runenschritt (3 or Space) dashes along the stick or forward. Dodge inside a strike ring during its final 0.22 seconds to gain a rune and instantly refresh Bruch. Later clearings start with larger groups, and repeat waves grow to 32 simultaneous spirits.
 
 ## Implemented for 0.8
 

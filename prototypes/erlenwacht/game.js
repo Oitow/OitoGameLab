@@ -48,6 +48,8 @@ addEventListener('keyup',e=>keys.delete(e.code));
 function releaseInput(){keys.clear();resetStick();look=null}
 addEventListener('blur',releaseInput);
 ErlenCombat.start({ground,walkable,spawn,encounters:ErlenWorld.encounters});
+let dashTime=0,dashAngle=0;
+const dashDuration=.22;
 function advance(dt){
   time+=dt;
   let a=stickX+Number(keys.has('KeyD'))-Number(keys.has('KeyA'));
@@ -55,19 +57,30 @@ function advance(dt){
   const length=max(1,hypot(a,b));a/=length;b/=length;
   yaw+=dt*1.8*(Number(keys.has('ArrowRight'))-Number(keys.has('ArrowLeft')));
   const running=sprint||keys.has('ShiftLeft'), speed=running?8.4:4.6;
-  const response=1-Math.exp(-dt*(a||b?10:16));
-  vx=mix(vx,(cos(yaw)*a+sin(yaw)*b)*speed,response);
-  vz=mix(vz,(cos(yaw)*b-sin(yaw)*a)*speed,response);
+  const action=ErlenCombat.update(dt,{x,z,yaw});
+  if(action.dashed){
+    dashTime=dashDuration;
+    dashAngle=yaw+(hypot(a,b)>.1?Math.atan2(a,b):0);
+  }
+  if(dashTime>0){
+    const speed=8+19*dashTime/dashDuration;
+    vx=sin(dashAngle)*speed;vz=cos(dashAngle)*speed;
+    dashTime=max(0,dashTime-dt);
+    if(!dashTime){vx*=.4;vz*=.4}
+  }else{
+    const response=1-Math.exp(-dt*(a||b?10:16));
+    vx=mix(vx,(cos(yaw)*a+sin(yaw)*b)*speed,response);
+    vz=mix(vz,(cos(yaw)*b-sin(yaw)*a)*speed,response);
+  }
   const oldX=x,oldZ=z;
   if(walkable(x+vx*dt,z))x+=vx*dt;else vx=0;
   if(walkable(x,z+vz*dt))z+=vz*dt;else vz=0;
   const moved=hypot(x-oldX,z-oldZ);
   step=min(1,moved/(dt*4.6));phase+=moved*(running?1.68:2.05);
   if(step>.05 && $('#hint').style.opacity!=='0')$('#hint').style.opacity='0';
-  const action=ErlenCombat.update(dt,{x,z,yaw});
   cast=action.cast;
   if(action.respawn){
-    x=action.respawn.x;z=action.respawn.z;vx=vz=0;cy=ground(x,z)+3.4;
+    x=action.respawn.x;z=action.respawn.z;vx=vz=dashTime=0;cy=ground(x,z)+3.4;
   }
   const target=action.aimYaw??(step>.05?Math.atan2(vx,vz):facing);
   facing+=Math.atan2(sin(target-facing),cos(target-facing))*(1-Math.exp(-dt*14));
@@ -82,7 +95,8 @@ function advance(dt){
 function actors(){
   verts.length=0;
   const y=ground(x,z)+.035,c=cos(facing),s=sin(facing);
-  transform=([a,b,d])=>[x+a*c+d*s,y+b,z-a*s+d*c];
+  const lean=.24*sin(PI*dashTime/dashDuration);
+  transform=([a,b,d])=>[x+a*c+d*s+b*lean*sin(dashAngle),y+b*(1-lean*.38),z-a*s+d*c+b*lean*cos(dashAngle)];
   ErlenCharacter.render({time,phase,step,sprint:sprint||keys.has('ShiftLeft'),cast});
   transform=null;
   ErlenCombat.draw();
