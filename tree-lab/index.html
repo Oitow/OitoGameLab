@@ -354,6 +354,11 @@
           <button id="newSeed">New seed</button
           ><button id="copy">Copy settings</button>
         </div>
+        <details id="methodPanel" open>
+          <summary>Specimen renderer</summary>
+          <div id="methods"></div>
+          <p class="small" id="methodNote"></p>
+        </details>
         <details open>
           <summary>Growth & form</summary>
           <div id="growth"></div>
@@ -416,6 +421,9 @@
       const defaults = {
         species: "Oak",
         style: "Naturalistic",
+        method: "Branch mesh",
+        sdfResolution: 28,
+        splatSize: 1.25,
         seed: 1847,
         age: 1,
         height: 14,
@@ -601,6 +609,7 @@
 
       // Procedural surface library. Reuse one bark tile and one cutout spray atlas per species/style.
       const surfaces = new Map(),
+        canopySun = { value: V(0.6, 0.7, 0.4).normalize() },
         windTime = { value: 0 },
         windLevel = { value: 1 };
       function windMaterial(m) {
@@ -631,10 +640,18 @@
           pine = p.species === "Pine",
           paint = p.style === "Painterly fantasy",
           retro = p.style === "PS2 low-poly";
+        const ink = p.style === "Woodcut",
+          copper = p.style === "Copper autumn";
         const bark = canvas(retro ? 32 : 128, retro ? 64 : 256),
           ctx = bark.getContext("2d"),
           r = rand(931);
-        ctx.fillStyle = birch ? "#dedcc5" : pine ? "#826952" : "#766f5b";
+        ctx.fillStyle = ink
+          ? "#c6b68f"
+          : birch
+            ? "#dedcc5"
+            : pine
+              ? "#826952"
+              : "#766f5b";
         ctx.fillRect(0, 0, bark.width, bark.height);
         for (let i = 0; i < (retro ? 170 : 3900); i++) {
           let x = r() * bark.width,
@@ -643,7 +660,8 @@
             l = 3 + r() * (birch ? 9 : 41);
           ctx.strokeStyle =
             r() > 0.52 ? (birch ? "#514e43aa" : "#372f2780") : "#fff4ce59";
-          ctx.lineWidth = w;
+          if (ink) ctx.strokeStyle = i % 4 ? "#272d2677" : "#f7ecd2";
+          ctx.lineWidth = ink ? w * 0.55 : w;
           ctx.beginPath();
           ctx.moveTo(x, y);
           ctx.bezierCurveTo(
@@ -668,6 +686,9 @@
             : birch
               ? ["#77974c", "#b1c469", "#92ad59", "#cad574"]
               : ["#759344", "#94af52", "#b1bf60", "#668742", "#c3ca72"];
+        if (ink) swatches = ["#313a33", "#586152", "#abb097", "#e6d9ae"];
+        if (copper)
+          swatches = ["#8e3421", "#d26429", "#e79c3d", "#edba57", "#b74721"];
         for (let k = 0; k < 4; k++) {
           c.save();
           c.translate(k * size, 0);
@@ -703,7 +724,7 @@
               c.fillStyle = swatches[Math.floor(r() * swatches.length)];
               c.beginPath();
               c.moveTo(0, 2);
-              if (pine || retro) {
+              if (pine || retro || ink) {
                 c.lineTo(-w, -l * 0.7);
                 c.lineTo(0, -l * 1.7);
                 c.lineTo(w, -l * 0.7);
@@ -722,6 +743,11 @@
               }
               c.closePath();
               c.fill();
+              if (ink) {
+                c.strokeStyle = "#30392e";
+                c.lineWidth = 1.1;
+                c.stroke();
+              }
               if (!pine && !retro) {
                 c.strokeStyle = "#e2dd9a79";
                 c.lineWidth = 0.65;
@@ -756,7 +782,7 @@
             flatShading: retro,
           }),
         );
-        const res = { wood, leaf, atlas, size, bt, at };
+        const res = { swatches, wood, leaf, atlas, size, bt, at };
         surfaces.set(key, res);
         return res;
       }
@@ -774,7 +800,7 @@
         g.computeBoundingSphere();
         return g;
       }
-      function meshParts(p, sk, level, detail) {
+      function meshParts(p, sk, level, detail, withLeaves = true) {
         const w = buffers(),
           l = buffers(),
           retro = p.style === "PS2 low-poly",
@@ -833,6 +859,7 @@
             }
           }
         }
+        if (!withLeaves) return [geometry(w)];
         for (const tip of sk.tips) {
           const r = rand(tip.id * 913 + p.seed),
             prob = level === 1 ? 0.12 : level === 2 ? 0.38 : 1;
@@ -973,24 +1000,280 @@
         );
         return { geo: geometry(b), mat, map };
       }
+      // Surface nets: sample a smooth union of tapered segments, then connect
+      // one mean edge intersection per crossing cell around each sign change.
+      function rootSurface(paths, radius, resolution) {
+        const box = new T.Box3(),
+          segments = [];
+        const blend = radius * 0.16;
+        for (const path of paths) {
+          path.pts.forEach((v, i) => {
+            const r = path.radii[i] + blend;
+            box.expandByPoint(v.clone().addScalar(r));
+            box.expandByPoint(v.clone().addScalar(-r));
+            if (!i) return;
+            const a = path.pts[i - 1],
+              d = v.clone().sub(a);
+            segments.push({
+              a,
+              d,
+              inv: 1 / Math.max(1e-9, d.lengthSq()),
+              r: path.radii[i - 1],
+              dr: path.radii[i] - path.radii[i - 1],
+            });
+          });
+        }
+        const size = box.getSize(V());
+        const nx = resolution,
+          nz = resolution,
+          ny = resolution * 3;
+        const stride = nx * ny,
+          count = stride * nz;
+        const dx = size.x / (nx - 1),
+          dy = size.y / (ny - 1),
+          dz = size.z / (nz - 1);
+        const field = new Float32Array(count).fill(radius * 10);
+        const ids = new Int32Array(count).fill(-1);
+        // Each capsule only touches samples in its expanded bounding box.
+        for (const { a, d, inv, r, dr } of segments) {
+          const pad = Math.max(r, r + dr) + blend + 2 * Math.max(dx, dy, dz);
+          const limits = (v, end, origin, step, n) => [
+            Math.max(0, Math.floor((Math.min(v, end) - pad - origin) / step)),
+            Math.min(
+              n - 1,
+              Math.ceil((Math.max(v, end) + pad - origin) / step),
+            ),
+          ];
+          const [x0, x1] = limits(a.x, a.x + d.x, box.min.x, dx, nx);
+          const [y0, y1] = limits(a.y, a.y + d.y, box.min.y, dy, ny);
+          const [z0, z1] = limits(a.z, a.z + d.z, box.min.z, dz, nz);
+          for (let z = z0; z <= z1; z++)
+            for (let y = y0; y <= y1; y++)
+              for (let x = x0; x <= x1; x++) {
+                const px = box.min.x + x * dx - a.x,
+                  py = box.min.y + y * dy - a.y,
+                  pz = box.min.z + z * dz - a.z;
+                const t = clamp((px * d.x + py * d.y + pz * d.z) * inv, 0, 1);
+                const dist =
+                  Math.hypot(px - t * d.x, py - t * d.y, pz - t * d.z) -
+                  r -
+                  t * dr;
+                const at = x + y * nx + z * stride,
+                  old = field[at];
+                const h = Math.max(blend - Math.abs(old - dist), 0) / blend;
+                field[at] = Math.min(old, dist) - h * h * blend * 0.25;
+              }
+        }
+        const b = buffers(),
+          steps = [1, nx, stride];
+        const corners = [
+          0,
+          1,
+          nx,
+          nx + 1,
+          stride,
+          stride + 1,
+          stride + nx,
+          stride + nx + 1,
+        ];
+        for (let z = 0; z < nz - 1; z++)
+          for (let y = 0; y < ny - 1; y++)
+            for (let x = 0; x < nx - 1; x++) {
+              const at = x + y * nx + z * stride,
+                inside = field[at] < 0;
+              if (corners.every((offset) => field[at + offset] < 0 === inside))
+                continue;
+              let sx = 0,
+                sy = 0,
+                sz = 0,
+                edges = 0;
+              for (let c = 0; c < 8; c++)
+                for (let axis = 0; axis < 3; axis++) {
+                  const bit = 1 << axis;
+                  if (c & bit) continue;
+                  const v = field[at + corners[c]],
+                    w = field[at + corners[c | bit]];
+                  if (v < 0 === w < 0) continue;
+                  const t = v / (v - w);
+                  sx += (c & 1) + (axis === 0 ? t : 0);
+                  sy += ((c >> 1) & 1) + (axis === 1 ? t : 0);
+                  sz += (c >> 2) + (axis === 2 ? t : 0);
+                  edges++;
+                }
+              const px = box.min.x + (x + sx / edges) * dx,
+                py = box.min.y + (y + sy / edges) * dy;
+              const pz = box.min.z + (z + sz / edges) * dz;
+              const id = (ids[at] = b.pos.length / 3);
+              b.pos.push(px, py, pz);
+              b.uv.push((px + 0.63 * pz) / radius, py / 2);
+              for (let axis = 0; axis < 3; axis++) {
+                if (field[at + steps[axis]] < 0 === inside) continue;
+                const u = steps[(axis + 1) % 3],
+                  v = steps[(axis + 2) % 3];
+                const j = ids[at - u],
+                  k = ids[at - u - v],
+                  l = ids[at - v];
+                if (!(j >= 0 && k >= 0 && l >= 0)) continue;
+                if (inside) b.idx.push(id, j, k, id, k, l);
+                else b.idx.push(id, l, k, id, k, j);
+              }
+            }
+        return geometry(b);
+      }
+
+      // Project a 3D ellipsoid covariance into camera space. A stochastic
+      // opacity test lets kernels intersect opaque limbs without a depth sort.
+      function canopySplats(p, sk, art) {
+        const centers = [],
+          colors = [],
+          axes = [],
+          sizes = [];
+        for (const tip of sk.tips) {
+          const r = rand(p.seed + tip.id * 913);
+          if (r() > Math.min(1, p.foliage * (0.45 + 0.55 * (p.detail ?? 1))))
+            continue;
+          const n = Math.ceil(11 * p.foliage);
+          for (let i = 0; i < n; i++) {
+            const angle = tip.a + i * 2.4 + r(),
+              dir = V(
+                Math.cos(angle),
+                r() * 1.8 - 0.6,
+                Math.sin(angle),
+              ).normalize();
+            const reach = sk.h * (0.012 + 0.065 * r());
+            const center = tip.at.clone().addScaledVector(dir, reach);
+            const sigma = sk.h * (0.005 + 0.005 * r()) * p.splatSize;
+            const tint = new T.Color(
+              art.swatches[Math.floor(r() * art.swatches.length)],
+            ).multiplyScalar(0.72 + 0.38 * r() + (0.22 * center.y) / sk.h);
+            centers.push(center.x, center.y, center.z);
+            axes.push(dir.x, dir.y, dir.z);
+            sizes.push(
+              sigma * (p.species === "Pine" ? 2.5 : 1.7),
+              sigma,
+              sigma * 0.56,
+            );
+            colors.push(tint.r, tint.g, tint.b);
+          }
+        }
+        const g = new T.InstancedBufferGeometry();
+        g.setAttribute(
+          "position",
+          new T.Float32BufferAttribute(
+            [-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0],
+            3,
+          ),
+        );
+        g.setIndex([0, 1, 2, 0, 2, 3]);
+        for (const [key, data] of Object.entries({
+          center: centers,
+          tint: colors,
+          axis: axes,
+          sigma: sizes,
+        }))
+          g.setAttribute(
+            key,
+            new T.InstancedBufferAttribute(new Float32Array(data), 3),
+          );
+        g.instanceCount = centers.length / 3;
+        const material = new T.ShaderMaterial({
+          uniforms: {
+            time: windTime,
+            wind: windLevel,
+            lightDir: canopySun,
+            treeHeight: { value: sk.h },
+          },
+          vertexShader: `
+            attribute vec3 center,tint,axis,sigma;
+            uniform float time,wind,treeHeight;
+            uniform vec3 lightDir;
+            varying vec2 kernel;
+            varying vec3 pigment;
+            varying float salt;
+            void main(){
+              vec3 c=center;
+              float y=max(c.y,0.);
+              c.x+=step(.5,wind)*(.00085*y*y*(sin(time*1.25)+.35*sin(time*2.1+y*.11))+step(1.5,wind)*.002*y*sin(time*3.7+c.z*.85));
+              c.z+=step(.5,wind)*.00037*y*y*cos(time);
+              vec4 eye=modelViewMatrix*vec4(c,1.);
+              vec3 u=normalize(cross(axis,vec3(0,1,0)));
+              mat3 basis=mat3(modelViewMatrix)*mat3(axis*sigma.x,u*sigma.y,cross(axis,u)*sigma.z);
+              vec3 ex=vec3(basis[0].x,basis[1].x,basis[2].x);
+              vec3 ey=vec3(basis[0].y,basis[1].y,basis[2].y);
+              vec3 ez=vec3(basis[0].z,basis[1].z,basis[2].z);
+              ex-=eye.x/min(eye.z,-.001)*ez;
+              ey-=eye.y/min(eye.z,-.001)*ez;
+              float a=sqrt(max(dot(ex,ex),1e-12)), b=dot(ex,ey)/a;
+              kernel=position.xy*2.8;
+              eye.xy+=vec2(a*kernel.x,b*kernel.x+sqrt(max(dot(ey,ey)-b*b,1e-12))*kernel.y);
+              gl_Position=projectionMatrix*eye;
+              vec3 outward=normalize(center-vec3(0.,treeHeight*.55,0.)+axis*.2);
+              float daylight=dot(normalize(mat3(modelMatrix)*outward),lightDir);
+              pigment=tint*(.84+.5*daylight);
+              salt=fract(dot(center,vec3(.127,.311,.591)));
+            }`,
+          fragmentShader: `
+            varying vec2 kernel;
+            varying vec3 pigment;
+            varying float salt;
+            void main(){
+              float weight=.92*exp(-.5*dot(kernel,kernel));
+              float noise=fract(52.9829189*fract(dot(gl_FragCoord.xy,vec2(.06711056,.00583715))+salt));
+              if(noise>weight) discard;
+              gl_FragColor=vec4(pigment,1.);
+              #include <tonemapping_fragment>
+              #include <colorspace_fragment>
+            }`,
+        });
+        const mesh = new T.Mesh(g, material);
+        mesh.frustumCulled = false;
+        mesh.userData.ownedMaterial = true;
+        return mesh;
+      }
+
       /** createTree(seed, settings) -> Group at ground origin. dispose with TreeLab.dispose. */
       function createTree(seed, settings = {}) {
         const p = { ...defaults, ...settings, seed },
           sk = skeleton(p),
           a = surface(p),
           g = new T.Group();
-        meshParts(p, sk, 0, p.detail ?? 1).forEach((geo, i) => {
-          const m = new T.Mesh(geo, i ? a.leaf : a.wood);
+        const sdf = p.method === "SDF root mesh",
+          splats = p.method === "Gaussian canopy";
+        const tubeSkeleton = sdf
+          ? {
+              ...sk,
+              paths: sk.paths.filter((path) => path.depth && !path.root),
+            }
+          : sk;
+        const parts = meshParts(p, tubeSkeleton, 0, p.detail ?? 1, !splats);
+        if (sdf)
+          parts.push(
+            rootSurface(
+              sk.paths.filter((path) => !path.depth || path.root),
+              sk.rad,
+              clamp(Math.round(p.sdfResolution), 16, 48),
+            ),
+          );
+        parts.forEach((geo, i) => {
+          const m = new T.Mesh(geo, i === 1 ? a.leaf : a.wood);
           m.castShadow = true;
-          m.receiveShadow = !i;
+          m.receiveShadow = i !== 1;
           g.add(m);
         });
+        if (splats) {
+          const cloud = canopySplats(p, sk, a);
+          g.add(cloud);
+          g.userData.splats = cloud.geometry.instanceCount;
+        }
         g.userData.paths = sk.paths.length;
         return g;
       }
       function dropTree(g) {
         g.removeFromParent();
-        g.traverse((o) => o.geometry?.dispose());
+        g.traverse((o) => {
+          o.geometry?.dispose();
+          if (o.userData.ownedMaterial) o.material.dispose();
+        });
       }
 
       // Forest renderer. Spatial cells reject whole groups; surviving instances are compacted into variant batches.
@@ -1222,7 +1505,7 @@
           surfaces.clear();
         },
       };
-      // Demo/UI. Shared resources stay cached across inspector edits, bounded by three species × three styles.
+      // Demo/UI. Shared resources stay cached across inspector edits, keyed by species and style.
       const $ = (id) => document.getElementById(id),
         cv = $("world"),
         gl = cv.getContext("webgl2", {
@@ -1475,7 +1758,6 @@
       for (const [y, r, h] of [
         [1.62, 0.13, 0.26],
         [1.17, 0.18, 0.62],
-
       ]) {
         let m = new T.Mesh(
           h === 0.26
@@ -1487,9 +1769,17 @@
         scale.add(m);
       }
       for (const side of [-1, 1]) {
-        for (const [x,y,length,radius,lean] of [[.095,.45,.9,.074,0],[.225,1.17,.57,.053,.12]]) {
-          const limb=new T.Mesh(new T.CylinderGeometry(radius,radius*.78,length,8),sm);
-          limb.position.set(x*side,y,0); limb.rotation.z=lean*side; scale.add(limb);
+        for (const [x, y, length, radius, lean] of [
+          [0.095, 0.45, 0.9, 0.074, 0],
+          [0.225, 1.17, 0.57, 0.053, 0.12],
+        ]) {
+          const limb = new T.Mesh(
+            new T.CylinderGeometry(radius, radius * 0.78, length, 8),
+            sm,
+          );
+          limb.position.set(x * side, y, 0);
+          limb.rotation.z = lean * side;
+          scale.add(limb);
         }
       }
       scale.position.set(2, land(2, 0.5), 0.5);
@@ -1580,6 +1870,7 @@
           .copy(sun.position)
           .sub(sun.target.position)
           .normalize();
+        canopySun.value.copy(sky.material.uniforms.dir.value);
       }
       function specimenCam() {
         camera.position
@@ -1600,6 +1891,7 @@
       }
       function titles() {
         const walk = mode === "woods";
+        $("methodPanel").hidden = walk;
         $("plate").textContent = walk
           ? "Forest study"
           : "Specimen study · " + String(s.seed).padStart(4, "0");
@@ -1626,6 +1918,7 @@
         scene.add(hero);
         hero.visible = mode === "spec";
         genMs = performance.now() - st;
+        frameSamples.length = 0;
         titles();
       }
       async function makeForest() {
@@ -1699,7 +1992,24 @@
           "Naturalistic",
           "Painterly fantasy",
           "PS2 low-poly",
+          "Copper autumn",
+          "Woodcut",
         ]);
+        opt("methods", "method", "Method", [
+          "Branch mesh",
+          "SDF root mesh",
+          "Gaussian canopy",
+        ]);
+        range(
+          "methods",
+          "sdfResolution",
+          "SDF grid across trunk and roots",
+          16,
+          48,
+          4,
+        );
+        range("methods", "splatSize", "Gaussian radius", 0.65, 2, 0.05);
+        showMethod();
         add("base", "seed", "Generator seed", "number", {
           min: 0,
           max: 2147483647,
@@ -1750,17 +2060,22 @@
         l.append(el);
         $(id).append(l);
         sync(k);
-        el.addEventListener(type === "number" ? "change" : "input", () => {
-          if (type === "number" && !el.value) return;
-          s[k] =
-            type === "checkbox"
-              ? el.checked
-              : type === "select"
-                ? el.value
-                : clamp(+el.value, +el.min, +el.max);
-          sync(k);
-          change(k);
-        });
+        el.addEventListener(
+          type === "number" || ["sdfResolution", "splatSize"].includes(k)
+            ? "change"
+            : "input",
+          () => {
+            if (type === "number" && !el.value) return;
+            s[k] =
+              type === "checkbox"
+                ? el.checked
+                : type === "select"
+                  ? el.value
+                  : clamp(+el.value, +el.min, +el.max);
+            sync(k);
+            change(k);
+          },
+        );
       }
       function sync(k) {
         const el = $("in-" + k);
@@ -1770,6 +2085,17 @@
         if ($("out-" + k))
           $("out-" + k).textContent =
             k === "age" ? Math.round(s[k] * 100) + "%" : s[k];
+      }
+      function showMethod() {
+        const sdf = s.method === "SDF root mesh",
+          splats = s.method === "Gaussian canopy";
+        $("in-sdfResolution").parentElement.style.display = sdf ? "" : "none";
+        $("in-splatSize").parentElement.style.display = splats ? "" : "none";
+        $("methodNote").textContent = sdf
+          ? "A sampled distance field joins the trunk and root flares. Higher grid sizes preserve finer tips."
+          : splats
+            ? "Ellipsoids at twig tips form the crown. Radius controls how strongly neighbouring kernels overlap."
+            : "Tapered branch tubes with textured leaf sprays.";
       }
       function change(k) {
         cancelBench();
@@ -1795,6 +2121,11 @@
           ].includes(k)
         )
           return;
+        if (["method", "sdfResolution", "splatSize"].includes(k)) {
+          showMethod();
+          makeHero();
+          return;
+        }
         forestDirty = true;
         if (loading) abort?.abort();
         clearTimeout(updatePending);
@@ -2085,7 +2416,11 @@ TreeLab.releaseSurfaces(); // after all users finish`;
             i.calls +
             " calls   " +
             i.triangles.toLocaleString() +
-            " tris\n" +
+            " tris" +
+            (mode === "spec" && hero.userData.splats
+              ? " · " + hero.userData.splats.toLocaleString() + " splats"
+              : "") +
+            "\n" +
             cv.width +
             " × " +
             cv.height +
