@@ -1,5 +1,11 @@
 # Status — 2026-11-11
 
+## Tree Lab · 2026-11-26
+
+[Tree Lab](../tree-lab/index.html) is a standalone WebGL2 vegetation workbench using Three.js 0.160.1. Inspect a seeded oak, birch or pine, then walk a mixed forest of up to 5,000 instances. The inspector exposes growth, styles, graphics, diagnostics and a game integration example.
+
+A 20-second route after 3 seconds of warm-up measured 13.7 FPS, 66.7 ms median and 133.3 ms p95 in Linux x86_64 Chromium with ANGLE SwiftShader, 508 × 428 rendering, Mobile preset and 5,000 placed trees. Desktop and 390 × 844 portrait layouts were exercised. Physical Android and hardware GPU performance remain unmeasured.
+
 ## Erlenwacht · 2026-11-15
 
 [Erlenwacht](../prototypes/erlenwacht/index.html) is a standalone portrait action adventure. The seeded island spans roughly 452 × 582 metres. Follow the lanterns from Windkap through Hirschgrund and Dämmerforst to the willow on Sonnenweide. A numeric URL seed (for example `?seed=17`) changes the terrain and vegetation. Open the HTML with its sibling scripts and stylesheet present, or serve the repository with `npm run dev`.

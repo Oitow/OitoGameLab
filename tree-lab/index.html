@@ -1,0 +1,2124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1f332b" />
+    <title>Tree Lab · Vegetation workbench</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      :root {
+        --ink: #23382c;
+        --paper: #f6f5eb;
+        --line: #d6d8c9;
+        --moss: #486746;
+        --mono: ui-monospace, monospace;
+      }
+      body {
+        margin: 0;
+        font:
+          14px system-ui,
+          sans-serif;
+        color: var(--ink);
+        background: var(--paper);
+      }
+      button,
+      select,
+      input {
+        font: inherit;
+        color: inherit;
+      }
+      button,
+      select {
+        cursor: pointer;
+      }
+      button {
+        border: 1px solid var(--line);
+        background: #fffef5;
+        border-radius: 5px;
+        padding: 7px 11px;
+      }
+      button:hover {
+        border-color: #80957a;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible {
+        outline: 2px solid #c98830;
+      }
+      header {
+        height: 58px;
+        background: #20342b;
+        color: #f8f6e6;
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        gap: 13px;
+      }
+      header svg {
+        width: 31px;
+        height: 35px;
+      }
+      header strong {
+        font:
+          600 25px Georgia,
+          serif;
+        letter-spacing: -1px;
+      }
+      header small {
+        color: #ced4bd;
+        border-left: 1px solid #647267;
+        padding-left: 15px;
+      }
+      nav {
+        margin-left: auto;
+        display: flex;
+        gap: 3px;
+      }
+      nav button {
+        background: transparent;
+        color: #dee5d4;
+        border: 0;
+      }
+      nav button[aria-pressed="true"] {
+        background: #ebefcf;
+        color: #253b29;
+      }
+      main {
+        height: calc(100dvh - 58px);
+        display: flex;
+      }
+      #stage {
+        flex: 1;
+        position: relative;
+        min-width: 0;
+        overflow: hidden;
+        background: #bdceba;
+      }
+      #world {
+        width: 100%;
+        height: 100%;
+        display: block;
+        touch-action: none;
+      }
+      .plate,
+      .hint,
+      #metrics,
+      #toggle,
+      #stick,
+      #message {
+        position: absolute;
+      }
+      .plate {
+        left: 24px;
+        top: 20px;
+        pointer-events: none;
+        text-shadow: 0 1px 12px #fff9;
+      }
+      .plate small,
+      .eyebrow {
+        font: 600 10px var(--mono);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      .plate h1 {
+        font:
+          normal clamp(29px, 3.5vw, 54px) Georgia,
+          serif;
+        letter-spacing: -0.055em;
+        margin: 3px 0;
+      }
+      .plate i {
+        font:
+          italic 15px Georgia,
+          serif;
+      }
+      .hint {
+        bottom: 20px;
+        left: 20px;
+        background: #23382bde;
+        color: #f9faeb;
+        padding: 8px 13px;
+        border-radius: 30px;
+        font-size: 11px;
+        pointer-events: none;
+      }
+      #metrics {
+        right: 13px;
+        bottom: 15px;
+        background: #172c23e8;
+        color: #e2eacb;
+        white-space: pre;
+        font: 10px/1.6 var(--mono);
+        padding: 8px 10px;
+        border-radius: 5px;
+        pointer-events: none;
+      }
+      #toggle {
+        top: 15px;
+        right: 14px;
+        background: #f7f8e9ec;
+        z-index: 4;
+      }
+      aside {
+        width: 298px;
+        overflow: auto;
+        padding: 23px 20px 30px;
+        border-left: 1px solid var(--line);
+        background: var(--paper);
+      }
+      aside h2 {
+        font:
+          normal 28px Georgia,
+          serif;
+        letter-spacing: -1px;
+        margin: 4px 0 18px;
+      }
+      aside h3,
+      summary {
+        font: 600 14px system-ui;
+      }
+      summary {
+        cursor: pointer;
+        padding: 13px 0;
+      }
+      details {
+        border-top: 1px solid var(--line);
+      }
+      label {
+        display: block;
+        margin: 9px 0 13px;
+        font-size: 12px;
+      }
+      output {
+        float: right;
+        font: 11px var(--mono);
+        color: #526649;
+      }
+      select,
+      input[type="number"] {
+        width: 100%;
+        background: #fffcf2;
+        border: 1px solid #cdd1bf;
+        border-radius: 4px;
+        padding: 7px;
+        margin-top: 4px;
+      }
+      input[type="range"] {
+        width: 100%;
+        display: block;
+        height: 15px;
+        margin: 5px 0 0;
+        accent-color: #557247;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        margin: 10px 0;
+      }
+      .row > * {
+        flex: 1;
+      }
+      .small,
+      #result {
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      #result {
+        white-space: pre-line;
+      }
+      #message {
+        left: 50%;
+        top: 45%;
+        transform: translate(-50%, -50%);
+        background: var(--paper);
+        border-radius: 6px;
+        padding: 9px 14px;
+      }
+      #stick {
+        bottom: 44px;
+        left: 18px;
+        width: 88px;
+        height: 88px;
+        border-radius: 50%;
+        border: 1px solid #ecf2db99;
+        background: #25392c44;
+        touch-action: none;
+        display: none;
+        place-items: center;
+        color: white;
+        font-size: 24px;
+      }
+      pre {
+        font-size: 10px;
+        white-space: pre-wrap;
+      }
+      body.closed aside,
+      [hidden] {
+        display: none !important;
+      }
+      @media (pointer: coarse) {
+        body.walk #stick {
+          display: grid;
+        }
+      }
+      @media (max-width: 760px) {
+        header {
+          height: 49px;
+          padding: 0 10px;
+        }
+        header small {
+          display: none;
+        }
+        main {
+          height: calc(100dvh - 49px);
+        }
+        aside {
+          position: absolute;
+          right: 0;
+          top: 101px;
+          bottom: 0;
+          width: min(290px, 86vw);
+          z-index: 3;
+          box-shadow: -6px 6px 20px #20322322;
+        }
+        .plate {
+          top: 18px;
+          left: 14px;
+        }
+        .hint {
+          bottom: 10px;
+          left: 8px;
+          max-width: 48%;
+          font-size: 10px;
+        }
+        #metrics {
+          right: 6px;
+          bottom: 7px;
+        }
+        #toggle {
+          right: 8px;
+          top: 8px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <svg
+        viewBox="0 0 40 40"
+        fill="none"
+        stroke="#d9e6b4"
+        stroke-width="1.8"
+        aria-hidden="true"
+      >
+        <path d="M19 36V18m0 9L9 18m10 6 10-12M19 19l-3-9" />
+        <path
+          d="M5 18C1 13 5 8 10 9c-1-7 6-10 10-5 5-6 11-2 11 3 9 0 10 9 4 12 2 7-6 11-11 7M14 28c-7 2-13-3-9-10"
+        /></svg
+      ><strong>Tree Lab</strong><small>Procedural vegetation workbench</small>
+      <nav>
+        <button id="spec" aria-pressed="true">Specimen</button
+        ><button id="woods" aria-pressed="false">Forest</button>
+      </nav>
+    </header>
+    <main>
+      <section id="stage">
+        <canvas
+          id="world"
+          aria-label="Interactive three-dimensional tree viewport"
+        ></canvas>
+        <div class="plate">
+          <small id="plate">Specimen study</small>
+          <h1 id="title">English oak</h1>
+          <i id="latin">Quercus robur</i>
+        </div>
+        <button id="toggle" aria-controls="panel">Controls ▾</button>
+        <div id="message">Growing the clearing…</div>
+        <div class="hint" id="hint">
+          Drag to orbit · Scroll or pinch to zoom · Shift-drag to pan
+        </div>
+        <div id="metrics"></div>
+        <div id="stick" aria-label="Movement joystick">✥</div>
+      </section>
+      <aside id="panel">
+        <div class="eyebrow">Inspector</div>
+        <h2>Tree settings</h2>
+        <div id="base"></div>
+        <div class="row">
+          <button id="newSeed">New seed</button
+          ><button id="copy">Copy settings</button>
+        </div>
+        <details open>
+          <summary>Growth & form</summary>
+          <div id="growth"></div>
+        </details>
+        <details>
+          <summary>Light & scale</summary>
+          <div id="light"></div>
+        </details>
+        <details>
+          <summary>Forest & benchmark</summary>
+          <div id="forestUI"></div>
+          <button id="run">Run 20-second route</button>
+          <p class="small">
+            Fixed layout & path · 3 s warm-up · fixed resolution
+          </p>
+          <p id="result" aria-live="polite"></p>
+        </details>
+        <details>
+          <summary>Graphics</summary>
+          <div id="graphics"></div>
+        </details>
+        <details>
+          <summary>Game integration</summary>
+          <p class="small">
+            TreeLab exposes Three.js objects. Units are metres. The host owns
+            its scene, camera and renderer.
+          </p>
+          <pre id="example"></pre>
+        </details>
+      </aside>
+    </main>
+    <script>
+      if (innerWidth <= 760) document.body.classList.add("closed");
+      onerror = (e) => {
+        const m = document.querySelector("#message");
+        m.hidden = false;
+        m.textContent = e;
+      };
+    </script>
+    <script type="module">
+      const T = await import(
+        "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.min.js"
+      ).catch(() => {
+        document.getElementById("message").textContent =
+          "Could not load Three.js 0.160.1. Check your internet connection and reload.";
+        throw Error("Three.js download failed");
+      });
+      const TAU = 2 * Math.PI,
+        clamp = T.MathUtils.clamp,
+        V = (x = 0, y = 0, z = 0) => new T.Vector3(x, y, z);
+      function rand(seed) {
+        let a = seed | 0;
+        return () => {
+          a = (a + 0x6d2b79f5) | 0;
+          let t = Math.imul(a ^ (a >>> 15), 1 | a);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      const defaults = {
+        species: "Oak",
+        style: "Naturalistic",
+        seed: 1847,
+        age: 1,
+        height: 14,
+        girth: 1,
+        spread: 1,
+        branches: 1,
+        foliage: 1,
+      };
+      const mobile = matchMedia("(pointer:coarse)").matches || innerWidth < 761;
+      const presets = {
+        Mobile: [0.7, 0, 25, 0.55, 0.7, 1],
+        Balanced: [1, 1, 38, 0.8, 1, 1],
+        High: [1.35, 2, 65, 1, 1.35, 2],
+      };
+      const gfxNames = [
+        "resolution",
+        "shadow",
+        "shadowDist",
+        "detail",
+        "lod",
+        "wind",
+      ];
+      function quality(name) {
+        return Object.fromEntries(
+          gfxNames.map((k, i) => [k, presets[name][i]]),
+        );
+      }
+      const s = {
+        ...defaults,
+        preset: mobile ? "Mobile" : "Balanced",
+        ...quality(mobile ? "Mobile" : "Balanced"),
+        density: 1000,
+        sun: 38,
+        reference: false,
+      };
+      function canvas(w, h = w) {
+        const c = document.createElement("canvas");
+        c.width = w;
+        c.height = h;
+        return c;
+      }
+      function texture(c) {
+        const t = new T.CanvasTexture(c);
+        t.colorSpace = T.SRGBColorSpace;
+        return t;
+      }
+      // Tree generator. Paths are addressed by stable integer IDs. Buds have fixed birth ages.
+      function skeleton(p) {
+        const pine = p.species === "Pine",
+          birch = p.species === "Birch",
+          paths = [],
+          tips = [];
+        const h = p.height * (0.14 + 0.86 * p.age),
+          width = h * (pine ? 0.28 : birch ? 0.32 : 0.54) * p.spread;
+        const rad =
+          h *
+          (pine ? 0.026 : birch ? 0.022 : 0.046) *
+          p.girth *
+          (0.56 + 0.44 * p.age);
+        function limb(id, start, delta, r, depth, birth, root = false) {
+          const rng = rand((p.seed | 0) ^ Math.imul(id, 15485863)),
+            age = clamp((p.age - birth) / Math.max(0.16, 1 - birth), 0, 1);
+          if (age <= 0 && !root) return;
+          const extent = depth ? Math.min(1, 0.14 + age * 1.17) : 1;
+          const pts = [],
+            radii = [],
+            bend = (rng() - 0.5) * 0.28,
+            bow = (rng() - 0.5) * 0.23;
+          for (let i = 0; i <= 5; i++) {
+            const t = (i / 5) * extent,
+              wave = Math.sin(t * Math.PI);
+            pts.push(
+              start
+                .clone()
+                .addScaledVector(delta, t)
+                .add(
+                  V(
+                    bend * delta.length() * wave,
+                    depth && !root ? -delta.length() * 0.085 * wave : 0,
+                    bow * delta.length() * wave,
+                  ),
+                ),
+            );
+            radii.push(
+              r *
+                (1 - (0.91 * i) / 5) *
+                (depth ? 0.52 + 0.48 * extent : 1) *
+                (i === 0 && !depth ? 1.6 : 1),
+            );
+          }
+          paths.push({ pts, radii, depth, root, id });
+          return pts;
+        }
+        const main = limb(
+          1,
+          V(),
+          V(
+            (rand(p.seed)() - 0.5) * h * 0.13,
+            h * (pine ? 0.98 : birch ? 0.95 : 0.82),
+            0.035 * h,
+          ),
+          rad,
+          0,
+          0,
+        );
+        for (let i = 0; i < 7; i++) {
+          let a = i * 2.4 + rand(p.seed + i)();
+          limb(
+            8000 + i,
+            main[0].clone().setY(rad * 0.55),
+            V(Math.cos(a) * rad * 2.9, -rad * 0.72, Math.sin(a) * rad * 2.9),
+            rad * 0.66,
+            1,
+            0,
+            true,
+          );
+        }
+        function point(pts, t) {
+          let n = clamp(t, 0, 0.9999) * 5,
+            i = Math.floor(n);
+          return pts[i].clone().lerp(pts[i + 1], n - i);
+        }
+        function fork(id, at, a, len, r, depth, birth, rise) {
+          const rng = rand(p.seed ^ Math.imul(id, 31337)),
+            delta = V(Math.cos(a) * len, rise, Math.sin(a) * len);
+          const pts = limb(id, at, delta, r, depth, birth);
+          if (!pts) return;
+          if (depth >= 3) {
+            tips.push({ at: pts[5], a, id });
+            tips.push({ at: pts[3], a: a + 0.85, id: id + 70000 });
+            return;
+          }
+          const n = depth === 1 ? (pine ? 4 : 6) : 4,
+            before = tips.length;
+          for (let j = 0; j < n; j++) {
+            const u =
+                (j + (depth === 1 ? 2.6 : 1.4)) /
+                (n + (depth === 1 ? 1.7 : 0.5)),
+              sign = j % 2 ? 1 : -1,
+              turn = sign * (0.42 + rng() * 0.97);
+            fork(
+              id * 7 + j + 1,
+              point(pts, u),
+              a + turn,
+              len * (0.34 + 0.4 * rng()) * (pine ? 0.78 : 1),
+              r * (0.39 + 0.13 * rng()),
+              depth + 1,
+              birth + 0.035 + (depth === 2 ? 0.39 : 0.16) * rng(),
+              (pine ? 0.035 : birch ? 0.082 : 0.088) * h * (0.48 + rng() * 0.8),
+            );
+          }
+          if (tips.length === before) tips.push({ at: pts[5], a, id });
+        }
+        const count = pine ? 49 : birch ? 19 : 16,
+          offset = rand(p.seed + 49)() * TAU;
+        for (let i = 0; i < count; i++) {
+          const rng = rand(p.seed + i * 71 + 812);
+          let t = pine
+            ? 0.18 + (Math.floor(i / 5) / 10) * 0.79
+            : 0.28 + (0.69 * (i + 0.4)) / count;
+          const a = i * 2.39996 + offset + (rng() - 0.5) * 0.55,
+            factor = pine
+              ? 1.09 - t
+              : birch
+                ? 0.34 + 0.61 * Math.sin(t * Math.PI)
+                : 0.19 + 1.18 * Math.sin((t + 0.01) * Math.PI) ** 0.79;
+          const born = 0.018 + (i / count) * 0.24 + rng() * 0.085;
+          if (rng() > Math.min(1, p.branches / (0.63 + 0.52 * rng()))) continue;
+          fork(
+            20 + i,
+            point(main, t),
+            a,
+            width * factor * (0.56 + 0.39 * rng()),
+            rad * (pine ? 0.21 : birch ? 0.35 : 0.75) * (1 - 0.55 * t),
+            1,
+            born,
+            h * (pine ? -0.014 : birch ? 0.2 : 0.28) * (0.58 + rng() * 0.84),
+          );
+        }
+        if (tips.length < 15) tips.push({ at: main[5], a: 0, id: 411 });
+        return { paths, tips, h, rad };
+      }
+
+      // Procedural surface library. Reuse one bark tile and one cutout spray atlas per species/style.
+      const surfaces = new Map(),
+        windTime = { value: 0 },
+        windLevel = { value: 1 };
+      function windMaterial(m) {
+        m.onBeforeCompile = (sh) => {
+          sh.uniforms.uTime = windTime;
+          sh.uniforms.uWind = windLevel;
+          sh.vertexShader =
+            "uniform float uTime,uWind;\n" +
+            sh.vertexShader.replace(
+              "#include <begin_vertex>",
+              `#include <begin_vertex>
+ vec3 origin=vec3(0.);
+ #ifdef USE_INSTANCING
+ origin=instanceMatrix[3].xyz;
+ #endif
+ float y=max(position.y,0.),phase=origin.x*.13+origin.z*.17;
+ float sway=sin(uTime*1.25+phase)+.35*sin(uTime*2.1+phase+y*.11);
+ transformed.x+=step(.5,uWind)*(.00085*y*y*sway+step(1.5,uWind)*.002*y*sin(uTime*3.7+position.z*.85));
+ transformed.z+=step(.5,uWind)*.00037*y*y*cos(uTime+phase);`,
+            );
+        };
+        return m;
+      }
+      function surface(p) {
+        const key = p.species + p.style;
+        if (surfaces.has(key)) return surfaces.get(key);
+        const birch = p.species === "Birch",
+          pine = p.species === "Pine",
+          paint = p.style === "Painterly fantasy",
+          retro = p.style === "PS2 low-poly";
+        const bark = canvas(retro ? 32 : 128, retro ? 64 : 256),
+          ctx = bark.getContext("2d"),
+          r = rand(931);
+        ctx.fillStyle = birch ? "#dedcc5" : pine ? "#826952" : "#766f5b";
+        ctx.fillRect(0, 0, bark.width, bark.height);
+        for (let i = 0; i < (retro ? 170 : 3900); i++) {
+          let x = r() * bark.width,
+            y = r() * bark.height,
+            w = 0.5 + r() * 2,
+            l = 3 + r() * (birch ? 9 : 41);
+          ctx.strokeStyle =
+            r() > 0.52 ? (birch ? "#514e43aa" : "#372f2780") : "#fff4ce59";
+          ctx.lineWidth = w;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.bezierCurveTo(
+            x + (birch ? l * 0.4 : 2),
+            y + 2,
+            x + (birch ? l * 0.65 : -2),
+            y + (birch ? 3 : l * 0.6),
+            x + (birch ? l : 1),
+            y + (birch ? 1 : l),
+          );
+          ctx.stroke();
+        }
+        const bt = texture(bark);
+        bt.wrapS = bt.wrapT = T.RepeatWrapping;
+        const size = retro ? 64 : 128,
+          atlas = canvas(size * 4, size),
+          c = atlas.getContext("2d");
+        let swatches = paint
+          ? ["#387c78", "#61a78b", "#b7cd82", "#588f95", "#fee49c"]
+          : pine
+            ? ["#345b44", "#527655", "#7a915b", "#627e52"]
+            : birch
+              ? ["#77974c", "#b1c469", "#92ad59", "#cad574"]
+              : ["#759344", "#94af52", "#b1bf60", "#668742", "#c3ca72"];
+        for (let k = 0; k < 4; k++) {
+          c.save();
+          c.translate(k * size, 0);
+          c.scale(size / 128, size / 128);
+          function stem(x, y, X, Y) {
+            c.strokeStyle = pine ? "#6b6244" : "#706b42";
+            c.lineWidth = 1.6;
+            c.beginPath();
+            c.moveTo(x, y);
+            c.lineTo(X, Y);
+            c.stroke();
+          }
+          stem(63, 125, 62, 9);
+          for (let j = 0; j < (pine ? 64 : paint ? 23 : 32); j++) {
+            let u = j / (pine ? 64 : paint ? 23 : 32),
+              sign = j % 2 ? 1 : -1;
+            let y = 118 - u * 103,
+              x = 63 + Math.sin(u * 6 + k) * 4,
+              dx =
+                sign *
+                (8 + Math.sin(u * Math.PI) ** 0.65 * 39) *
+                (0.58 + 0.42 * r()),
+              dy = -9 - r() * 12;
+            stem(x, y, x + dx, y + dy);
+            for (let n = 0; n < (pine ? 5 : 3); n++) {
+              let f = (n + 1) / (pine ? 5 : 3),
+                a = sign * (0.56 + r() * 0.86),
+                w = pine ? 0.9 : (paint ? 4.6 : 2.4) + r() * 2.3,
+                l = pine ? 8 + r() * 5 : 5.3 + r() * 3.7;
+              c.save();
+              c.translate(x + dx * f, y + dy * f);
+              c.rotate(a);
+              c.fillStyle = swatches[Math.floor(r() * swatches.length)];
+              c.beginPath();
+              c.moveTo(0, 2);
+              if (pine || retro) {
+                c.lineTo(-w, -l * 0.7);
+                c.lineTo(0, -l * 1.7);
+                c.lineTo(w, -l * 0.7);
+              } else {
+                for (const side of [-1, 1])
+                  for (let v = 0; v <= 10; v++) {
+                    let t = side < 0 ? v / 10 : 1 - v / 10;
+                    c.lineTo(
+                      side *
+                        w *
+                        Math.sin(Math.PI * t) ** 0.65 *
+                        (birch ? 1 : 0.79 + 0.21 * Math.cos(20 * t)),
+                      -2 * l * t,
+                    );
+                  }
+              }
+              c.closePath();
+              c.fill();
+              if (!pine && !retro) {
+                c.strokeStyle = "#e2dd9a79";
+                c.lineWidth = 0.65;
+                c.beginPath();
+                c.moveTo(0, 0);
+                c.lineTo(0, -1.6 * l);
+                c.stroke();
+              }
+              c.restore();
+            }
+          }
+          c.restore();
+        }
+        const at = texture(atlas);
+        if (retro) {
+          bt.magFilter = at.magFilter = T.NearestFilter;
+        }
+        const wood = windMaterial(
+          new T.MeshLambertMaterial({
+            map: bt,
+            color: paint ? 0xd9b9ad : 0xffffff,
+            flatShading: retro,
+          }),
+        );
+        const leaf = windMaterial(
+          new T.MeshLambertMaterial({
+            map: at,
+            alphaTest: 0.38,
+            vertexColors: true,
+            side: T.DoubleSide,
+            emissive: paint ? 0x233525 : 0x2e351d,
+            flatShading: retro,
+          }),
+        );
+        const res = { wood, leaf, atlas, size, bt, at };
+        surfaces.set(key, res);
+        return res;
+      }
+      function buffers() {
+        return { pos: [], uv: [], col: [], idx: [] };
+      }
+      function geometry(b) {
+        const g = new T.BufferGeometry();
+        g.setAttribute("position", new T.Float32BufferAttribute(b.pos, 3));
+        g.setAttribute("uv", new T.Float32BufferAttribute(b.uv, 2));
+        if (b.col.length)
+          g.setAttribute("color", new T.Float32BufferAttribute(b.col, 3));
+        g.setIndex(b.idx);
+        g.computeVertexNormals();
+        g.computeBoundingSphere();
+        return g;
+      }
+      function meshParts(p, sk, level, detail) {
+        const w = buffers(),
+          l = buffers(),
+          retro = p.style === "PS2 low-poly",
+          paint = p.style === "Painterly fantasy";
+        for (const path of sk.paths) {
+          if (path.depth > (level === 1 ? 2 : level === 2 ? 2 : 3)) continue;
+          const { pts, radii, depth } = path,
+            steps = level === 0 && !retro ? 5 : 3,
+            n =
+              depth === 0
+                ? retro
+                  ? 8
+                  : level === 0
+                    ? 16
+                    : 9
+                : depth === 1
+                  ? level === 1
+                    ? 4
+                    : 7
+                  : level === 1
+                    ? 3
+                    : 4;
+          let start = w.pos.length / 3,
+            dist = 0;
+          const dir = pts[5].clone().sub(pts[0]).normalize(),
+            ref = Math.abs(dir.y) > 0.88 ? V(1, 0, 0) : V(0, 1, 0);
+          for (let j = 0; j <= steps; j++) {
+            const k = Math.round((j * 5) / steps),
+              v = pts[k],
+              t = pts[Math.min(5, k + 1)]
+                .clone()
+                .sub(pts[Math.max(0, k - 1)])
+                .normalize(),
+              u = t.clone().cross(ref).normalize(),
+              z = t.clone().cross(u);
+            if (j) dist += v.distanceTo(pts[Math.round(((j - 1) * 5) / steps)]);
+            for (let i = 0; i <= n; i++) {
+              let a = (i / n) * TAU,
+                rad =
+                  radii[k] *
+                  (1 +
+                    (depth === 0 ? 0.085 : 0.035) * Math.cos(5 * a + j * 0.32)),
+                q = v
+                  .clone()
+                  .addScaledVector(u, rad * Math.cos(a))
+                  .addScaledVector(z, rad * Math.sin(a));
+              w.pos.push(q.x, q.y, q.z);
+              w.uv.push(
+                (i / n) * Math.max(1, Math.round(radii[0] * 3.5)),
+                dist / 2,
+              );
+              if (j && i) {
+                let b = start + j * (n + 1) + i;
+                w.idx.push(b - n - 2, b - n - 1, b, b - n - 2, b, b - 1);
+              }
+            }
+          }
+        }
+        for (const tip of sk.tips) {
+          const r = rand(tip.id * 913 + p.seed),
+            prob = level === 1 ? 0.12 : level === 2 ? 0.38 : 1;
+          if (r() > Math.min(1, p.foliage * prob * (0.45 + 0.55 * detail)))
+            continue;
+          const count =
+            (level === 0 && !retro ? 5 : 3) + (p.foliage > 1.18 ? 1 : 0);
+          for (let j = 0; j < count; j++) {
+            let a = tip.a + j * 2.4 + r() * 0.9,
+              sz =
+                sk.h *
+                (p.species === "Pine" ? 0.059 : 0.061) *
+                (0.64 + 0.54 * r()) *
+                (level === 1 ? 2.15 : level === 2 ? 1.38 : 1) *
+                (retro ? 1.25 : paint ? 1.12 : 1) *
+                (0.75 + 0.25 * p.foliage);
+            let d = V(Math.cos(a), r() * 1.95 - 0.65, Math.sin(a)).normalize(),
+              u = V(-d.z, r() * 1.8 - 0.9, d.x).normalize(),
+              base = tip.at,
+              idx = l.pos.length / 3;
+            let k = Math.floor(r() * 4),
+              shade = 0.62 + 0.3 * r() + (0.09 * base.y) / sk.h;
+            for (const [x, y] of [
+              [-0.34, 0],
+              [0.34, 0],
+              [0.51, 0.55],
+              [0.27, 1],
+              [-0.27, 1],
+              [-0.51, 0.55],
+            ]) {
+              let q = base
+                .clone()
+                .addScaledVector(d, y * sz * 1.43)
+                .addScaledVector(u, x * sz * 1.28);
+              q.y += Math.sin(y * Math.PI) * sz * 0.15;
+              l.pos.push(q.x, q.y, q.z);
+              l.uv.push((k + x + 0.5) / 4, y);
+              l.col.push(
+                shade * (paint ? 0.96 : 1),
+                shade,
+                shade * (paint ? 1.06 : 0.94),
+              );
+            }
+            l.idx.push(
+              idx,
+              idx + 1,
+              idx + 2,
+              idx,
+              idx + 2,
+              idx + 5,
+              idx + 5,
+              idx + 2,
+              idx + 3,
+              idx + 5,
+              idx + 3,
+              idx + 4,
+            );
+          }
+        }
+        return [geometry(w), geometry(l)];
+      }
+      // Bake two perpendicular projections of the actual paths and leaf sprays, in depth order.
+      function impostor(p, sk, art) {
+        const W = 160,
+          c = canvas(W * 2, W),
+          ctx = c.getContext("2d"),
+          extent = Math.max(
+            sk.h * 1.18,
+            ...sk.tips.map(
+              (t) => Math.max(Math.abs(t.at.x), Math.abs(t.at.z)) * 2.4,
+            ),
+          ),
+          unit = W / extent;
+        const top = Math.max(sk.h, ...sk.tips.map((t) => t.at.y)) + sk.h * 0.13,
+          b = buffers();
+        for (let side = 0; side < 2; side++) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(side * W, 0, W, W);
+          ctx.clip();
+          const sx = (v) => side * W + W / 2 + (side ? v.z : v.x) * unit,
+            sy = (v) => ((top - v.y) * W) / top;
+          for (const path of sk.paths) {
+            if (path.depth > 2) continue;
+            ctx.strokeStyle = p.species === "Birch" ? "#aba997" : "#675c48";
+            for (let j = 1; j < 6; j++) {
+              ctx.lineWidth = Math.max(0.5, path.radii[j - 1] * unit * 1.75);
+              ctx.beginPath();
+              ctx.moveTo(sx(path.pts[j - 1]), sy(path.pts[j - 1]));
+              ctx.lineTo(sx(path.pts[j]), sy(path.pts[j]));
+              ctx.stroke();
+            }
+          }
+          const ts = [...sk.tips].sort((a, b) =>
+            side ? a.at.x - b.at.x : a.at.z - b.at.z,
+          );
+          for (const t of ts) {
+            let r = rand(t.id + p.seed);
+            if (r() > p.foliage) continue;
+            let n = sk.h * unit * 0.16 * (0.6 + 0.45 * r());
+            ctx.save();
+            ctx.translate(sx(t.at), sy(t.at));
+            ctx.rotate((r() - 0.5) * 2.8);
+            ctx.drawImage(
+              art.atlas,
+              Math.floor(r() * 4) * art.size,
+              0,
+              art.size,
+              art.size,
+              -n / 2,
+              -n * 0.78,
+              n,
+              n,
+            );
+            ctx.restore();
+          }
+          ctx.restore();
+          let i = b.pos.length / 3;
+          for (const [x, y] of [
+            [-0.5, 0],
+            [0.5, 0],
+            [0.5, 1],
+            [-0.5, 1],
+          ]) {
+            b.pos.push(side ? 0 : x * extent, y * top, side ? x * extent : 0);
+            b.uv.push((side + x + 0.5) / 2, y);
+          }
+          b.idx.push(i, i + 1, i + 2, i, i + 2, i + 3);
+        }
+        const map = texture(c);
+        const mat = windMaterial(
+          new T.MeshBasicMaterial({
+            map,
+            color: 0xc0c6a2,
+            side: T.DoubleSide,
+            alphaTest: 0.29,
+          }),
+        );
+        return { geo: geometry(b), mat, map };
+      }
+      /** createTree(seed, settings) -> Group at ground origin. dispose with TreeLab.dispose. */
+      function createTree(seed, settings = {}) {
+        const p = { ...defaults, ...settings, seed },
+          sk = skeleton(p),
+          a = surface(p),
+          g = new T.Group();
+        meshParts(p, sk, 0, p.detail ?? 1).forEach((geo, i) => {
+          const m = new T.Mesh(geo, i ? a.leaf : a.wood);
+          m.castShadow = true;
+          m.receiveShadow = !i;
+          g.add(m);
+        });
+        g.userData.paths = sk.paths.length;
+        return g;
+      }
+      function dropTree(g) {
+        g.removeFromParent();
+        g.traverse((o) => o.geometry?.dispose());
+      }
+
+      // Forest renderer. Spatial cells reject whole groups; surviving instances are compacted into variant batches.
+      const pause = () => new Promise((r) => setTimeout(r, 0)),
+        land = (x, z) =>
+          0.38 * Math.sin(x * 0.081) * Math.sin(z * 0.077) +
+          0.16 * Math.sin(z * 0.18) * Math.sin(x * 0.15);
+      async function populateForest(
+        scene,
+        {
+          seed = 1847,
+          density = 1000,
+          layoutSeed = 93251,
+          detail = 0.8,
+          signal,
+          ...settings
+        } = {},
+      ) {
+        const group = new T.Group(),
+          variants = [],
+          cells = new Map(),
+          r = rand(layoutSeed),
+          sphere = new T.Sphere(),
+          frustum = new T.Frustum(),
+          vp = new T.Matrix4();
+        density = clamp(Math.round(Number(density) || 1000), 100, 5000);
+        const check = () => signal?.throwIfAborted();
+        const forest = { group, placed: 0, visible: 0, updateLOD, dispose };
+        function dispose() {
+          group.removeFromParent();
+          for (const v of variants) {
+            for (const bs of v.batches)
+              for (const m of bs) {
+                m.dispose();
+                m.geometry.dispose();
+              }
+            v.far?.mat.dispose();
+            v.far?.map.dispose();
+          }
+          variants.length = 0;
+          cells.clear();
+        }
+        try {
+          const slots = 6,
+            points = [],
+            grid = new Map(),
+            radius = 350;
+          for (let i = 0; points.length < density; i++) {
+            if (i % 500 === 0) {
+              await pause();
+              check();
+            }
+            let x = (r() - 0.5) * 2 * radius,
+              z = (r() - 0.5) * 2 * radius;
+            const path = 8 * Math.sin(z * 0.035);
+            if (Math.abs(x - path) < 3.6 || Math.hypot(x + 12, z - 4) < 12)
+              continue;
+            const noise =
+              0.55 +
+              0.23 * Math.sin(x * 0.073 + z * 0.021) +
+              0.2 * Math.cos(z * 0.064 - x * 0.035);
+            if (r() > noise) continue;
+            const gx = Math.floor(x / 4),
+              gz = Math.floor(z / 4);
+            let near = false;
+            for (let a = -1; a <= 1; a++)
+              for (let b = -1; b <= 1; b++) {
+                const q = grid.get(gx + a + "," + (gz + b));
+                if (q && Math.hypot(x - q.x, z - q.z) < 3.8) near = true;
+              }
+            if (near || grid.has(gx + "," + gz)) continue;
+            const index = Math.floor(r() * slots),
+              size = 0.67 + r() * 0.59,
+              rot = r() * TAU,
+              shade = 0.75 + r() * 0.25,
+              o = new T.Object3D();
+            o.position.set(x, land(x, z), z);
+            o.rotation.y = rot;
+            o.scale.setScalar(size);
+            o.updateMatrix();
+            const pt = {
+              x,
+              z,
+              index,
+              size,
+              m: o.matrix,
+              tint: new T.Color(
+                shade,
+                shade * (0.95 + 0.05 * r()),
+                shade * (0.84 + 0.15 * r()),
+              ),
+              last: -1,
+            };
+            points.push(pt);
+            grid.set(gx + "," + gz, pt);
+            const cx = Math.floor(x / 32),
+              cz = Math.floor(z / 32),
+              key = cx + "," + cz;
+            if (!cells.has(key))
+              cells.set(key, { x: 32 * cx + 16, z: 32 * cz + 16, pts: [] });
+            cells.get(key).pts.push(pt);
+          }
+          for (let i = 0; i < slots; i++) {
+            await pause();
+            check();
+            const p = {
+                ...defaults,
+                ...settings,
+                species:
+                  i < 3
+                    ? settings.species || "Oak"
+                    : ["Oak", "Birch", "Pine"][i - 3],
+                age: Math.max(
+                  0.08,
+                  (settings.age ?? 1) * [1, 0.73, 0.46, 0.85, 0.83, 0.92][i],
+                ),
+                seed: seed + i * 763,
+              },
+              sk = skeleton(p),
+              art = surface(p),
+              far = impostor(p, sk, art);
+            const v = {
+              batches: [],
+              far,
+              radius: Math.max(sk.h * 1.6, p.height * p.spread * 1.45),
+            };
+            variants.push(v);
+            const capacity = points.reduce((n, t) => n + (t.index === i), 0);
+            for (let lev = 0; lev < 3; lev++) {
+              const geos =
+                  lev === 2
+                    ? [far.geo]
+                    : meshParts(p, sk, lev === 0 ? 2 : 1, detail),
+                bs = geos.map((g, k) => {
+                  const m = new T.InstancedMesh(
+                    g,
+                    lev === 2 ? far.mat : k ? art.leaf : art.wood,
+                    Math.max(1, capacity),
+                  );
+                  m.count = 0;
+                  m.frustumCulled = false;
+                  m.instanceMatrix.setUsage(T.DynamicDrawUsage);
+                  m.castShadow = lev === 0;
+                  m.receiveShadow = !k && lev === 0;
+                  group.add(m);
+                  return m;
+                });
+              v.batches.push(bs);
+            }
+          }
+          forest.placed = points.length;
+          scene.add(group);
+          return forest;
+        } catch (e) {
+          dispose();
+          throw e;
+        }
+        function updateLOD(camera, lod = 1) {
+          camera.updateMatrixWorld();
+          frustum.setFromProjectionMatrix(
+            vp.multiplyMatrices(
+              camera.projectionMatrix,
+              camera.matrixWorldInverse,
+            ),
+          );
+          forest.visible = 0;
+          for (const v of variants)
+            for (const bs of v.batches) for (const m of bs) m.count = 0;
+          for (const cell of cells.values()) {
+            sphere.center.set(cell.x, 10, cell.z);
+            sphere.radius =
+              27 + (48 * (settings.spread || 1) * (settings.height || 14)) / 14;
+            if (!frustum.intersectsSphere(sphere)) continue;
+            for (const t of cell.pts) {
+              const v = variants[t.index],
+                d = Math.hypot(
+                  t.x - camera.position.x,
+                  t.z - camera.position.z,
+                );
+              sphere.center.set(t.x, v.radius * t.size * 0.32, t.z);
+              sphere.radius = v.radius * t.size * 0.74;
+              if (
+                d > camera.far + sphere.radius ||
+                !frustum.intersectsSphere(sphere)
+              )
+                continue;
+              const near = (14 + t.index * 0.85) * lod,
+                mid = (44 + t.index * 1.4) * lod;
+              const level =
+                d < near * (t.last === 0 ? 1.13 : 0.95)
+                  ? 0
+                  : d < mid * (t.last === 1 ? 1.12 : 0.96)
+                    ? 1
+                    : 2;
+              t.last = level;
+              forest.visible++;
+              for (const m of v.batches[level]) {
+                m.setMatrixAt(m.count, t.m);
+                m.setColorAt(m.count++, t.tint);
+              }
+            }
+          }
+          for (const v of variants)
+            for (const bs of v.batches)
+              for (const m of bs) {
+                m.visible = m.count > 0;
+                if (m.count) {
+                  m.instanceMatrix.needsUpdate = true;
+                  m.instanceColor.needsUpdate = true;
+                }
+              }
+        }
+      }
+      /** Wind time in seconds. Quality 0 = still, 1 = sway, 2 = sway + twig ripple. */
+      function updateWind(seconds, quality = 1) {
+        windTime.value = seconds;
+        windLevel.value = quality;
+      }
+      window.TreeLab = {
+        THREE: T,
+        createTree,
+        populateForest,
+        updateWind,
+        updateLOD: (f, c, d) => f.updateLOD(c, d),
+        dispose: (o) => (o.dispose ? o.dispose() : dropTree(o)),
+        releaseSurfaces() {
+          for (const a of surfaces.values())
+            for (const k of ["wood", "leaf", "bt", "at"]) a[k].dispose();
+          surfaces.clear();
+        },
+      };
+      // Demo/UI. Shared resources stay cached across inspector edits, bounded by three species × three styles.
+      const $ = (id) => document.getElementById(id),
+        cv = $("world"),
+        gl = cv.getContext("webgl2", {
+          antialias: true,
+          alpha: false,
+          powerPreference: "high-performance",
+        });
+      if (!gl)
+        throw Error(
+          "WebGL2 is required. Enable hardware acceleration and reopen Tree Lab.",
+        );
+      const renderer = new T.WebGLRenderer({
+        canvas: cv,
+        context: gl,
+        antialias: true,
+      });
+      renderer.shadowMap.type = T.PCFSoftShadowMap;
+      const scene = new T.Scene(),
+        camera = new T.PerspectiveCamera(45, 1, 0.06, 225);
+      scene.background = new T.Color(0xccd9cb);
+      scene.fog = new T.FogExp2(0xccd9bc, 0.008);
+      const hemi = new T.HemisphereLight(0xfff6de, 0xb9bd98, 1.8),
+        sun = new T.DirectionalLight(0xffe9b6, 2.22);
+      scene.add(hemi, sun, sun.target);
+      sun.castShadow = true;
+      sun.shadow.bias = -0.0005;
+      sun.shadow.normalBias = 0.025;
+      const sky = new T.Mesh(
+        new T.SphereGeometry(205, 40, 20),
+        new T.ShaderMaterial({
+          side: T.BackSide,
+          depthWrite: false,
+          uniforms: { dir: { value: V(1, 0.65, -0.5).normalize() } },
+          vertexShader:
+            "varying vec3 d; void main(){d=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",
+          fragmentShader: `varying vec3 d;uniform vec3 dir;void main(){vec3 v=normalize(d);float y=max(v.y,0.);vec3 col=mix(vec3(.76,.82,.68),vec3(.29,.56,.74),pow(y,.52));float g=max(dot(v,dir),0.);col+=vec3(.42,.30,.13)*pow(g,14.)+vec3(1.,.85,.55)*smoothstep(.9993,.9998,g);gl_FragColor=vec4(col,1.);
+ #include <colorspace_fragment>
+ }`,
+        }),
+      );
+      scene.add(sky);
+      const field = canvas(256),
+        fc = field.getContext("2d"),
+        rng = rand(824);
+      fc.fillStyle = "#939f65";
+      fc.fillRect(0, 0, 256, 256);
+      for (let i = 0; i < 23500; i++) {
+        const col = ["#a8a56b", "#899e61", "#b6ad7a", "#637c4a", "#bfab71"][
+          i % 5
+        ];
+        fc.fillStyle = col;
+        fc.globalAlpha = 0.15 + rng() * 0.55;
+        fc.fillRect(rng() * 256, rng() * 256, 1 + rng() * 4, 1 + rng() * 3);
+      }
+      const ft = texture(field);
+      ft.wrapS = ft.wrapT = T.RepeatWrapping;
+      ft.repeat.set(25.4, 25.4);
+      ft.anisotropy = 4;
+      const gg = new T.PlaneGeometry(180, 180, 90, 90);
+      gg.rotateX(-Math.PI / 2);
+      const gp = gg.attributes.position,
+        gc = [];
+      for (let i = 0; i < gp.count; i++) {
+        let x = gp.getX(i),
+          z = gp.getZ(i);
+        gp.setY(i, land(x, z) - 0.025);
+        let v =
+          0.75 +
+          0.13 * Math.sin(x * 0.52 + z * 0.23) +
+          0.09 * Math.sin(z * 0.31);
+        gc.push(v, 0.95 * v, 0.79 * v);
+      }
+      gg.setAttribute("color", new T.Float32BufferAttribute(gc, 3));
+      gg.computeVertexNormals();
+      const ground = new T.Mesh(
+        gg,
+        new T.MeshLambertMaterial({ map: ft, vertexColors: true }),
+      );
+      ground.receiveShadow = true;
+      scene.add(ground);
+      // Nested ground rings follow the viewer. Their shader samples the same height function as walking.
+      const terrainData = buffers();
+      for (let ring = 0; ring < 5; ring++) {
+        const step = 2 ** ring,
+          n = 16,
+          base = terrainData.pos.length / 3;
+        for (let z = -n; z <= n; z++)
+          for (let x = -n; x <= n; x++) {
+            terrainData.pos.push(x * step, 0, z * step);
+            terrainData.uv.push(0, 0);
+            if (
+              x === n ||
+              z === n ||
+              (ring && x >= -8 && x < 8 && z >= -8 && z < 8)
+            )
+              continue;
+            let k = base + (z + n) * (2 * n + 1) + x + n;
+            terrainData.idx.push(k, k + 33, k + 1, k + 1, k + 33, k + 34);
+          }
+      }
+      const forestFloorMat = new T.MeshLambertMaterial({
+        map: ft,
+        color: 0xc4ce9d,
+      });
+      forestFloorMat.onBeforeCompile = (sh) => {
+        sh.vertexShader = sh.vertexShader.replace(
+          "#include <begin_vertex>",
+          `#include <begin_vertex>
+ vec2 groundXZ=position.xz+modelMatrix[3].xz;
+ transformed.y=.38*sin(groundXZ.x*.081)*sin(groundXZ.y*.077)+.16*sin(groundXZ.y*.18)*sin(groundXZ.x*.15)-.025;
+ vMapUv=groundXZ*.14;`,
+        );
+      };
+      const forestFloor = new T.Mesh(geometry(terrainData), forestFloorMat);
+      forestFloor.frustumCulled = false;
+      forestFloor.receiveShadow = true;
+      forestFloor.visible = false;
+      scene.add(forestFloor);
+      const clearing = new T.Group();
+      scene.add(clearing);
+      function dressing() {
+        const brush = buffers(),
+          stones = new T.InstancedMesh(
+            new T.DodecahedronGeometry(1, 0),
+            new T.MeshLambertMaterial({ color: 0x98947a, flatShading: true }),
+            80,
+          ),
+          o = new T.Object3D();
+        for (let i = 0; i < 80; i++) {
+          let a = rng() * TAU,
+            d = 1.8 + rng() ** 1.4 * 27,
+            x = Math.cos(a) * d,
+            z = Math.sin(a) * d,
+            size = 0.04 + rng() ** 4 * 0.47;
+          o.position.set(x, land(x, z), z);
+          o.rotation.set(rng(), rng() * 3, rng());
+          o.scale.set(size * 1.6, size * 0.46, size);
+          o.updateMatrix();
+          stones.setMatrixAt(i, o.matrix);
+        }
+        stones.receiveShadow = true;
+        clearing.add(stones);
+        for (let j = 0; j < 3500; j++) {
+          let a = rng() * TAU,
+            d = 1.4 + rng() ** 0.65 * 32,
+            x = Math.cos(a) * d,
+            z = Math.sin(a) * d;
+          let h = 0.12 + rng() ** 2 * 0.41,
+            col = new T.Color().setHSL(
+              0.18 + rng() * 0.055,
+              0.23 + rng() * 0.22,
+              0.24 + rng() * 0.15,
+            );
+          for (let i = 0; i < 5; i++) {
+            let b = rng() * TAU,
+              dx = Math.cos(b),
+              dz = Math.sin(b),
+              px = x + dx * 0.12,
+              pz = z + dz * 0.12,
+              y = land(px, pz) - 0.024,
+              k = brush.pos.length / 3;
+            brush.pos.push(
+              px - dz * 0.021,
+              y,
+              pz + dx * 0.021,
+              px + dz * 0.021,
+              y,
+              pz - dx * 0.021,
+              px + dx * h * 0.65,
+              y + h * (0.5 + rng()),
+              pz + dz * h * 0.65,
+            );
+            brush.idx.push(k, k + 1, k + 2);
+            for (let n = 0; n < 3; n++) brush.col.push(col.r, col.g, col.b);
+          }
+        }
+        const grass = new T.Mesh(
+          geometry(brush),
+          new T.MeshLambertMaterial({ vertexColors: true, side: T.DoubleSide }),
+        );
+        grass.receiveShadow = true;
+        clearing.add(grass);
+        // Layered, wooded ridgelines enclose the specimen clearing.
+        for (let band = 0; band < 3; band++) {
+          let n = 1200,
+            ps = [],
+            cs = [],
+            ix = [],
+            r = rand(310 + band),
+            rad = 130 + band * 18;
+          for (let i = 0; i <= n; i++) {
+            let a = (i / n) * TAU,
+              y =
+                4 +
+                band * 2 +
+                2.6 * Math.sin(a * 6 + band) +
+                1.7 * Math.cos(a * 11) +
+                r() ** 0.6 * 2.7,
+              x = Math.cos(a) * rad,
+              z = Math.sin(a) * rad;
+            ps.push(x, -4, z, x, y, z);
+            let c = new T.Color([0x647754, 0x779079, 0x9dac8f][band]);
+            cs.push(c.r * 0.65, c.g * 0.65, c.b * 0.65, c.r, c.g, c.b);
+            if (i) {
+              let k = i * 2;
+              ix.push(k - 2, k - 1, k + 1, k - 2, k + 1, k);
+            }
+          }
+          let g = new T.BufferGeometry();
+          g.setAttribute("position", new T.Float32BufferAttribute(ps, 3));
+          g.setAttribute("color", new T.Float32BufferAttribute(cs, 3));
+          g.setIndex(ix);
+          clearing.add(
+            new T.Mesh(
+              g,
+              new T.MeshBasicMaterial({
+                vertexColors: true,
+                side: T.DoubleSide,
+              }),
+            ),
+          );
+        }
+        // Seeded treeline occupies the far edge of the clearing.
+        const back = rand(8542);
+        for (let variant = 0; variant < 4; variant++) {
+          const p = {
+            ...defaults,
+            species: ["Oak", "Birch", "Pine", "Oak"][variant],
+            seed: 108 + variant * 73,
+          };
+          const far = impostor(p, skeleton(p), surface(p)),
+            batch = new T.InstancedMesh(far.geo, far.mat, 34);
+          for (let i = 0; i < 34; i++) {
+            let a = back() * TAU,
+              dist = 106 + back() * 13 + 4 * Math.sin(3 * a);
+            o.position.set(Math.cos(a) * dist, -0.2, Math.sin(a) * dist);
+            o.rotation.set(0, back() * TAU, 0);
+            o.scale.setScalar(0.72 + back() * 0.55);
+            o.updateMatrix();
+            batch.setMatrixAt(i, o.matrix);
+            const shade = 0.72 + back() * 0.2;
+            batch.setColorAt(i, new T.Color(shade, shade, shade * 0.92));
+          }
+          clearing.add(batch);
+        }
+      }
+      dressing();
+      const scale = new T.Group(),
+        sm = new T.MeshLambertMaterial({ color: 0xc98049 });
+      for (const [y, r, h] of [
+        [1.62, 0.13, 0.26],
+        [1.17, 0.18, 0.62],
+
+      ]) {
+        let m = new T.Mesh(
+          h === 0.26
+            ? new T.SphereGeometry(r, 10, 8)
+            : new T.CylinderGeometry(r, r * 0.77, h, 9),
+          sm,
+        );
+        m.position.y = y;
+        scale.add(m);
+      }
+      for (const side of [-1, 1]) {
+        for (const [x,y,length,radius,lean] of [[.095,.45,.9,.074,0],[.225,1.17,.57,.053,.12]]) {
+          const limb=new T.Mesh(new T.CylinderGeometry(radius,radius*.78,length,8),sm);
+          limb.position.set(x*side,y,0); limb.rotation.z=lean*side; scale.add(limb);
+        }
+      }
+      scale.position.set(2, land(2, 0.5), 0.5);
+      clearing.add(scale);
+      scale.visible = false;
+
+      const ao = canvas(128),
+        ac = ao.getContext("2d"),
+        gr = ac.createRadialGradient(64, 64, 0, 64, 64, 64);
+      gr.addColorStop(0, "rgba(23,30,12,.65)");
+      gr.addColorStop(0.25, "rgba(37,45,16,.35)");
+      gr.addColorStop(1, "rgba(34,44,23,0)");
+      ac.fillStyle = gr;
+      ac.fillRect(0, 0, 128, 128);
+      const shade = new T.Mesh(
+        new T.PlaneGeometry(13, 13),
+        new T.MeshBasicMaterial({
+          map: texture(ao),
+          transparent: true,
+          depthWrite: false,
+          polygonOffset: true,
+          polygonOffsetFactor: -1,
+        }),
+      );
+      shade.rotation.x = -Math.PI / 2;
+      shade.position.y = 0.015;
+      clearing.add(shade);
+      let hero,
+        forest,
+        abort,
+        mode = "spec",
+        genMs = 0,
+        updatePending = 0,
+        forestDirty = true,
+        loading = false,
+        bench = null,
+        previous = "",
+        lastLOD = 0,
+        frameSamples = [],
+        last = 0,
+        hud = 0;
+      const target = V(0, 7.4, 0);
+      let theta = 0.38,
+        phi = 1.51,
+        dist = 32,
+        yaw = 0,
+        pitch = 0.055,
+        joyX = 0,
+        joyY = 0;
+      const held = new Set(),
+        pointers = new Map(),
+        speciesNames = {
+          Oak: ["English oak", "Quercus robur"],
+          Birch: ["Silver birch", "Betula pendula"],
+          Pine: ["Scots pine", "Pinus sylvestris"],
+        };
+      function resize() {
+        const w = cv.clientWidth,
+          h = cv.clientHeight;
+        renderer.setPixelRatio(s.resolution);
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }
+      new ResizeObserver(resize).observe($("stage"));
+      function light() {
+        sun.shadow.camera.left = sun.shadow.camera.bottom = -s.shadowDist / 2;
+        sun.shadow.camera.right = sun.shadow.camera.top = s.shadowDist / 2;
+        sun.shadow.camera.far = 170;
+        sun.shadow.camera.updateProjectionMatrix();
+        let n = s.shadow === 2 ? 2048 : 1024;
+        if (sun.shadow.mapSize.x !== n) {
+          sun.shadow.mapSize.set(n, n);
+          sun.shadow.map?.dispose();
+          sun.shadow.map = null;
+        }
+        renderer.shadowMap.enabled = !!s.shadow;
+        scale.visible = s.reference;
+        let a = (s.sun * Math.PI) / 180,
+          org = mode === "woods" ? camera.position : V();
+        sun.target.position.set(org.x, 1, org.z);
+        sun.position.set(
+          org.x + 53 * Math.cos(a),
+          42,
+          org.z + 53 * Math.sin(a),
+        );
+        sky.material.uniforms.dir.value
+          .copy(sun.position)
+          .sub(sun.target.position)
+          .normalize();
+      }
+      function specimenCam() {
+        camera.position
+          .copy(target)
+          .add(
+            V(
+              Math.sin(theta) * Math.sin(phi),
+              Math.cos(phi),
+              Math.cos(theta) * Math.sin(phi),
+            ).multiplyScalar(dist),
+          );
+        camera.position.y = Math.max(0.24, camera.position.y);
+        camera.lookAt(target);
+      }
+      function msg(t) {
+        $("message").hidden = !t;
+        $("message").textContent = t;
+      }
+      function titles() {
+        const walk = mode === "woods";
+        $("plate").textContent = walk
+          ? "Forest study"
+          : "Specimen study · " + String(s.seed).padStart(4, "0");
+        $("title").textContent = walk
+          ? "Mixed woodland"
+          : speciesNames[s.species][0];
+        $("latin").textContent = walk
+          ? "Ground-level survey"
+          : speciesNames[s.species][1];
+        $("hint").textContent = walk
+          ? mobile
+            ? "Left pad to walk · Drag to look"
+            : "WASD to walk · Drag to look · Shift to run"
+          : "Drag to orbit · Scroll or pinch to zoom · Shift-drag to pan";
+        $("spec").setAttribute("aria-pressed", !walk);
+        $("woods").setAttribute("aria-pressed", walk);
+        document.body.classList.toggle("walk", walk);
+      }
+      function makeHero() {
+        const st = performance.now(),
+          g = createTree(s.seed, s);
+        if (hero) dropTree(hero);
+        hero = g;
+        scene.add(hero);
+        hero.visible = mode === "spec";
+        genMs = performance.now() - st;
+        titles();
+      }
+      async function makeForest() {
+        abort?.abort();
+        const controller = new AbortController();
+        abort = controller;
+        loading = true;
+        msg("Growing forest variants…");
+        const start = performance.now();
+        try {
+          let f = await populateForest(scene, {
+            ...s,
+            signal: controller.signal,
+          });
+          forest?.dispose();
+          forest = f;
+          forestDirty = false;
+          genMs = performance.now() - start;
+          forest.group.visible = mode === "woods";
+          lastLOD = -1;
+          return true;
+        } catch (e) {
+          if (e.name !== "AbortError") {
+            msg(e.message);
+            throw e;
+          }
+          return false;
+        } finally {
+          if (abort === controller) {
+            loading = false;
+            msg("");
+          }
+        }
+      }
+      function cancelBench() {
+        if (bench) {
+          bench = null;
+          $("result").textContent = "Route canceled. " + previous;
+          $("run").textContent = "Run 20-second route";
+        }
+      }
+      async function view(v) {
+        cancelBench();
+        mode = v;
+        titles();
+        hero.visible = clearing.visible = ground.visible = v === "spec";
+        forestFloor.visible = v === "woods";
+        if (forest) forest.group.visible = v === "woods";
+        if (v === "spec") {
+          abort?.abort();
+          specimenCam();
+          msg("");
+        } else {
+          camera.position.set(0, 1.72, 10);
+          yaw = 0;
+          pitch = 0.05;
+          if (forestDirty || !forest) await makeForest();
+        }
+        light();
+        lastLOD = -1;
+      }
+      $("spec").onclick = () => view("spec");
+      $("woods").onclick = () => view("woods");
+      function controls() {
+        const range = (id, k, label, min, max, step) =>
+            add(id, k, label, "range", { min, max, step }),
+          opt = (id, k, label, options) =>
+            add(id, k, label, "select", { options });
+        opt("base", "species", "Species", Object.keys(speciesNames));
+        opt("base", "style", "Art style", [
+          "Naturalistic",
+          "Painterly fantasy",
+          "PS2 low-poly",
+        ]);
+        add("base", "seed", "Generator seed", "number", {
+          min: 0,
+          max: 2147483647,
+          step: 1,
+        });
+        for (const a of [
+          ["age", "Age · sapling to mature", 0.05, 1, 0.01],
+          ["height", "Mature height (m)", 5, 23, 0.5],
+          ["girth", "Trunk girth", 0.5, 1.7, 0.05],
+          ["spread", "Crown spread", 0.55, 1.55, 0.05],
+          ["branches", "Branch density", 0.35, 1.25, 0.05],
+          ["foliage", "Foliage density", 0.2, 1.55, 0.05],
+        ])
+          range("growth", ...a);
+        range("light", "sun", "Sun azimuth (°)", 0, 360, 1);
+        add("light", "reference", "1.75 m scale reference", "checkbox", {});
+        range("forestUI", "density", "Placed trees", 100, 5000, 100);
+        opt("graphics", "preset", "Quality preset", [
+          ...Object.keys(presets),
+          "Custom",
+        ]);
+        for (const a of [
+          ["resolution", "Render scale", 0.45, 1.6, 0.05],
+          ["shadow", "Shadows · off / medium / high", 0, 2, 1],
+          ["shadowDist", "Shadow distance (m)", 12, 90, 1],
+          ["detail", "Foliage detail", 0.25, 1, 0.05],
+          ["lod", "LOD distance multiplier", 0.45, 2, 0.05],
+          ["wind", "Wind · still / sway / ripple", 0, 2, 1],
+        ])
+          range("graphics", ...a);
+      }
+      function add(id, k, label, type, args) {
+        let l = document.createElement("label"),
+          el = document.createElement(type === "select" ? "select" : "input");
+        l.textContent = label;
+        el.id = "in-" + k;
+        if (type === "select")
+          for (const name of args.options) el.add(new Option(name, name));
+        else {
+          el.type = type;
+          Object.assign(el, args);
+        }
+        if (type === "range") {
+          let out = document.createElement("output");
+          out.id = "out-" + k;
+          l.append(out);
+        }
+        l.append(el);
+        $(id).append(l);
+        sync(k);
+        el.addEventListener(type === "number" ? "change" : "input", () => {
+          if (type === "number" && !el.value) return;
+          s[k] =
+            type === "checkbox"
+              ? el.checked
+              : type === "select"
+                ? el.value
+                : clamp(+el.value, +el.min, +el.max);
+          sync(k);
+          change(k);
+        });
+      }
+      function sync(k) {
+        const el = $("in-" + k);
+        if (!el) return;
+        if (el.type === "checkbox") el.checked = s[k];
+        else el.value = s[k];
+        if ($("out-" + k))
+          $("out-" + k).textContent =
+            k === "age" ? Math.round(s[k] * 100) + "%" : s[k];
+      }
+      function change(k) {
+        cancelBench();
+        if (k === "preset" && presets[s.preset]) {
+          Object.assign(s, quality(s.preset));
+          gfxNames.forEach(sync);
+        } else if (gfxNames.includes(k)) {
+          s.preset = "Custom";
+          sync("preset");
+        }
+        if (["resolution", "preset"].includes(k)) resize();
+        light();
+        lastLOD = -1;
+        if (
+          [
+            "sun",
+            "wind",
+            "shadow",
+            "shadowDist",
+            "lod",
+            "resolution",
+            "reference",
+          ].includes(k)
+        )
+          return;
+        forestDirty = true;
+        if (loading) abort?.abort();
+        clearTimeout(updatePending);
+        updatePending = setTimeout(() => {
+          updatePending = 0;
+          if (k !== "density") makeHero();
+          if (mode === "woods") makeForest();
+        }, 200);
+      }
+      controls();
+      $("newSeed").onclick = () => {
+        s.seed = crypto.getRandomValues(new Uint32Array(1))[0] >>> 1;
+        sync("seed");
+        change("seed");
+      };
+      $("copy").onclick = async () => {
+        let t = JSON.stringify(s, null, 2);
+        try {
+          await navigator.clipboard.writeText(t);
+          $("copy").textContent = "Copied";
+          setTimeout(() => ($("copy").textContent = "Copy settings"), 1200);
+        } catch {
+          prompt("Copy tree settings", t);
+        }
+      };
+      function panel() {
+        const open = !document.body.classList.contains("closed");
+        $("toggle").setAttribute("aria-expanded", open);
+        $("toggle").textContent = open ? "Hide controls" : "Controls ☰";
+      }
+      $("toggle").onclick = () => {
+        document.body.classList.toggle("closed");
+        panel();
+      };
+      panel();
+      const apiExample = `const { THREE, createTree, populateForest,
+  updateWind, updateLOD, dispose } = TreeLab;
+const tree = createTree(1847, { species: 'Oak', age: .8 });
+scene.add(tree);
+const grove = await populateForest(scene, {
+  seed: 1847, density: 5000, style: 'Naturalistic'
+});
+// In your render loop, before rendering:
+updateWind(elapsedSeconds, 2);
+updateLOD(grove, camera, 1);
+// On unload:
+dispose(tree);
+dispose(grove);
+TreeLab.releaseSurfaces(); // after all users finish`;
+      $("example").textContent = apiExample;
+      function drag(dx, dy, pan = false) {
+        if (bench) return;
+        if (mode === "woods") {
+          yaw -= dx * 0.005;
+          pitch = clamp(pitch - dy * 0.004, -1.35, 1.35);
+        } else if (pan) {
+          target.y = clamp(target.y + dy * dist * 0.0017, -1, 25);
+          target.x -= Math.cos(theta) * dx * dist * 0.0017;
+          target.z += Math.sin(theta) * dx * dist * 0.0017;
+        } else {
+          theta -= dx * 0.007;
+          phi = clamp(phi - dy * 0.006, 0.14, 2.65);
+        }
+      }
+      cv.onpointerdown = (e) => {
+        cv.setPointerCapture(e.pointerId);
+        pointers.set(e.pointerId, [e.clientX, e.clientY]);
+      };
+      cv.onpointermove = (e) => {
+        const old = pointers.get(e.pointerId);
+        if (!old) return;
+        const next = [e.clientX, e.clientY];
+        if (pointers.size === 2 && mode === "spec") {
+          const other = [...pointers].find(([id]) => id !== e.pointerId)[1];
+          const d = (p) => Math.hypot(p[0] - other[0], p[1] - other[1]);
+          dist = clamp((dist * d(old)) / Math.max(1, d(next)), 0.45, 90);
+          drag((next[0] - old[0]) * 0.5, (next[1] - old[1]) * 0.5, true);
+        } else
+          drag(
+            next[0] - old[0],
+            next[1] - old[1],
+            e.shiftKey || e.buttons === 2,
+          );
+        pointers.set(e.pointerId, next);
+      };
+      cv.onlostpointercapture = (e) => pointers.delete(e.pointerId);
+      cv.oncontextmenu = (e) => e.preventDefault();
+      cv.onwheel = (e) => {
+        e.preventDefault();
+        dist = clamp(dist * Math.exp(e.deltaY * 0.001), 0.45, 90);
+      };
+      cv.addEventListener("wheel", (e) => e.preventDefault(), {
+        passive: false,
+      });
+      onkeydown = (e) => {
+        if (!["INPUT", "SELECT", "TEXTAREA"].includes(e.target.tagName))
+          held.add(e.code);
+      };
+      onkeyup = (e) => held.delete(e.code);
+      onblur = () => {
+        held.clear();
+        joyX = joyY = 0;
+      };
+      const stick = $("stick");
+      function joy(e) {
+        let b = stick.getBoundingClientRect();
+        joyX = clamp((e.clientX - b.left - b.width / 2) / 32, -1, 1);
+        joyY = clamp((e.clientY - b.top - b.height / 2) / 32, -1, 1);
+      }
+      stick.onpointerdown = (e) => {
+        stick.setPointerCapture(e.pointerId);
+        joy(e);
+      };
+      stick.onpointermove = (e) => {
+        if (stick.hasPointerCapture(e.pointerId)) joy(e);
+      };
+      stick.onlostpointercapture = () => {
+        joyX = joyY = 0;
+      };
+      function walk(dt) {
+        let x = joyX + (held.has("KeyD") ? 1 : 0) - (held.has("KeyA") ? 1 : 0),
+          z = joyY + (held.has("KeyS") ? 1 : 0) - (held.has("KeyW") ? 1 : 0);
+        let v =
+          (dt * (held.has("ShiftLeft") ? 9 : 4.8)) /
+          Math.max(1, Math.hypot(x, z));
+        camera.position.x = clamp(
+          camera.position.x + (x * Math.cos(yaw) + z * Math.sin(yaw)) * v,
+          -339,
+          339,
+        );
+        camera.position.z = clamp(
+          camera.position.z + (-x * Math.sin(yaw) + z * Math.cos(yaw)) * v,
+          -339,
+          339,
+        );
+        camera.position.y = land(camera.position.x, camera.position.z) + 1.72;
+        camera.rotation.order = "YXZ";
+        camera.rotation.set(pitch, yaw, 0);
+      }
+      function stats(arr) {
+        const a = [...arr].sort((a, b) => a - b),
+          avg = a.reduce((v, n) => v + n, 0) / Math.max(1, a.length);
+        return {
+          fps: 1000 / avg,
+          med: a[Math.floor((a.length - 1) * 0.5)] || 0,
+          p95: a[Math.ceil(a.length * 0.95) - 1] || 0,
+        };
+      }
+      function device() {
+        const ext = gl.getExtension("WEBGL_debug_renderer_info");
+        return (
+          (ext
+            ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)
+            : gl.getParameter(gl.RENDERER)) +
+          " · " +
+          navigator.platform
+        );
+      }
+      $("run").onclick = async () => {
+        if (bench) {
+          cancelBench();
+          return;
+        }
+        clearTimeout(updatePending);
+        updatePending = 0;
+        await view("woods");
+        if (mode !== "woods" || loading || !forest || forestDirty) return;
+        bench = {
+          start: performance.now(),
+          samples: [],
+          lastSample: 0,
+          w: cv.width,
+          h: cv.height,
+        };
+        $("run").textContent = "Cancel route";
+        $("result").textContent = "Warming up…";
+        if (mobile) {
+          document.body.classList.add("closed");
+          panel();
+        }
+      };
+      function route(t) {
+        let z = 12 - t * 3.2,
+          x = 8 * Math.sin(z * 0.035);
+        camera.position.set(x, 1.72 + land(x, z), z);
+        camera.rotation.order = "YXZ";
+        camera.rotation.set(
+          0.1 + 0.045 * Math.sin(t * 0.42),
+          Math.atan(0.28 * Math.cos(z * 0.035)) + 0.34 * Math.sin(t * 0.38),
+          0,
+        );
+      }
+      function measure(now) {
+        const b = bench,
+          t = (now - b.start) / 1000;
+        if (cv.width !== b.w || cv.height !== b.h) {
+          cancelBench();
+          return;
+        }
+        route(Math.max(0, t - 3));
+        if (t < 3) return;
+        if (b.lastSample) b.samples.push(now - b.lastSample);
+        b.lastSample = now;
+        if (t < 23) return;
+        const a = stats(b.samples),
+          report = {
+            device: device(),
+            width: cv.width,
+            height: cv.height,
+            density: s.density,
+            preset: s.preset,
+            samples: b.samples.length,
+            ...a,
+            settings: { ...s },
+            layoutSeed: 93251,
+          };
+        window.lastTreeBenchmark = report;
+        const line =
+          a.fps.toFixed(1) +
+          " FPS · median " +
+          a.med.toFixed(1) +
+          " ms · p95 " +
+          a.p95.toFixed(1) +
+          " ms";
+        $("result").textContent =
+          line +
+          "\n" +
+          cv.width +
+          " × " +
+          cv.height +
+          " · " +
+          s.density +
+          " trees · " +
+          s.preset +
+          "\n" +
+          report.device +
+          (previous ? "\nPrevious: " + previous : "");
+        previous = line;
+        bench = null;
+        $("run").textContent = "Rerun 20-second route";
+        yaw = camera.rotation.y;
+        pitch = camera.rotation.x;
+      }
+      function animate(now) {
+        requestAnimationFrame(animate);
+        const ms = last ? now - last : 16.67;
+        last = now;
+        if (ms > 0) {
+          frameSamples.push(ms);
+          if (frameSamples.length > 180) frameSamples.shift();
+        }
+        if (mode === "spec") specimenCam();
+        else if (bench) measure(now);
+        else walk(Math.min(0.12, ms / 1000));
+        if (mode === "woods" && forest && (now - lastLOD > 70 || lastLOD < 0)) {
+          forest.updateLOD(camera, s.lod);
+          lastLOD = now;
+          light();
+        }
+        forestFloor.position.set(
+          Math.round(camera.position.x / 2) * 2,
+          0,
+          Math.round(camera.position.z / 2) * 2,
+        );
+        sky.position.copy(camera.position);
+        updateWind(
+          bench ? Math.max(0, (now - bench.start) / 1000 - 3) : now * 0.001,
+          s.wind,
+        );
+        renderer.render(scene, camera);
+        if (now - hud > 350) {
+          hud = now;
+          const a = stats(frameSamples),
+            i = renderer.info.render;
+          $("metrics").textContent =
+            (bench
+              ? (now - bench.start < 3000 ? "Warm-up" : "Route") +
+                " " +
+                Math.max(0, Math.ceil(23 - (now - bench.start) / 1000)) +
+                " s\n"
+              : "") +
+            a.fps.toFixed(0) +
+            " FPS   " +
+            a.med.toFixed(1) +
+            " / " +
+            a.p95.toFixed(1) +
+            " ms (med/p95)\n" +
+            i.calls +
+            " calls   " +
+            i.triangles.toLocaleString() +
+            " tris\n" +
+            cv.width +
+            " × " +
+            cv.height +
+            "   gen " +
+            genMs.toFixed(0) +
+            " ms" +
+            (mode === "woods"
+              ? "\n" +
+                (forest?.visible || 0) +
+                " visible / " +
+                (forest?.placed || 0) +
+                " placed"
+              : "");
+        }
+      }
+      cv.addEventListener("webglcontextlost", (e) => {
+        e.preventDefault();
+        cancelBench();
+        msg("Graphics context lost. Waiting for recovery…");
+      });
+      cv.addEventListener("webglcontextrestored", () => location.reload());
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) cancelBench();
+      });
+      makeHero();
+      resize();
+      dist = mobile
+        ? Math.max(34, 27 / camera.aspect)
+        : Math.max(34, 39 / camera.aspect);
+      light();
+      specimenCam();
+      msg("");
+      requestAnimationFrame(animate);
+    </script>
+  </body>
+</html>
