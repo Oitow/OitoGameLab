@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#17291f" />
+    <title>Tree Lab · Weltenwald</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #17291f;
+        color: #fff8df;
+        font:
+          15px system-ui,
+          sans-serif;
+      }
+      canvas {
+        display: block;
+        width: 100vw;
+        height: 100dvh;
+        touch-action: none;
+      }
+      button,
+      select,
+      input {
+        font: inherit;
+      }
+      button,
+      select,
+      input[type="number"] {
+        color: inherit;
+        background: #213b30;
+        border: 1px solid #829380;
+        border-radius: 5px;
+        padding: 8px;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:focus-visible,
+      a:focus-visible {
+        outline: 2px solid #f7c97a;
+      }
+      header,
+      .telemetry,
+      .pad,
+      #guide,
+      #notice,
+      #panel {
+        position: fixed;
+      }
+      header {
+        inset: 0 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 20px;
+        background: linear-gradient(#10231eee, transparent);
+        pointer-events: none;
+      }
+      header > * {
+        pointer-events: auto;
+      }
+      h1,
+      h2 {
+        font-family: Georgia, serif;
+        font-weight: normal;
+        margin: 0;
+      }
+      h1 {
+        font-size: clamp(26px, 4vw, 48px);
+        text-shadow: 0 2px 8px #17291f;
+      }
+      header a {
+        color: #e3e8cb;
+        font-size: 12px;
+      }
+      #panel {
+        top: 72px;
+        right: 12px;
+        width: min(330px, 94vw);
+        max-height: calc(100dvh - 90px);
+        overflow: auto;
+        background: #142b23f5;
+        border: 1px solid #718575;
+        border-radius: 8px;
+        padding: 16px;
+        z-index: 3;
+      }
+      h2 {
+        margin: 0 0 12px;
+      }
+      label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 13px;
+        margin: 10px 0;
+      }
+      select {
+        max-width: 62%;
+      }
+      input[type="number"] {
+        width: 120px;
+      }
+      details {
+        border-top: 1px solid #627568;
+        margin-top: 14px;
+        padding-top: 10px;
+      }
+      summary {
+        cursor: pointer;
+      }
+      #entries {
+        display: grid;
+        gap: 4px;
+        margin-top: 8px;
+      }
+      #entries button {
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      #entries small {
+        color: #d2d8bd;
+      }
+      .telemetry {
+        bottom: 14px;
+        right: 12px;
+        background: #10251edb;
+        border-radius: 5px;
+        padding: 8px 12px;
+        max-width: 66vw;
+        font: 12px/1.5 monospace;
+        white-space: pre-line;
+        pointer-events: none;
+      }
+      #guide {
+        left: 16px;
+        bottom: 13px;
+        max-width: 48vw;
+        text-shadow: 0 1px 4px #000;
+        font-size: 13px;
+        pointer-events: none;
+      }
+      #notice {
+        top: 80px;
+        left: 16px;
+        background: #1c3028df;
+        padding: 7px 12px;
+        border-left: 2px solid #e9c588;
+        max-width: 70vw;
+        pointer-events: none;
+      }
+      .pad {
+        display: none;
+        left: 15px;
+        bottom: 28px;
+        border-radius: 50%;
+        width: 82px;
+        height: 82px;
+        border: 1px solid #f1f5c990;
+        background: #2343368f;
+        touch-action: none;
+        place-items: center;
+        font-size: 24px;
+      }
+      .row {
+        display: flex;
+        gap: 7px;
+      }
+      .row > * {
+        flex: 1;
+      }
+      #return {
+        position: fixed;
+        top: 87px;
+        left: 16px;
+      }
+      body.inspect #notice,
+      body.inspect .pad {
+        display: none;
+      }
+      body.inspect #guide {
+        bottom: 12px;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      @media (pointer: coarse), (max-width: 650px) {
+        .pad {
+          display: grid;
+        }
+        #guide {
+          bottom: 116px;
+          font-size: 11px;
+        }
+        header {
+          padding: 10px 12px;
+        }
+        .telemetry {
+          font-size: 10px;
+        }
+        .telemetry {
+          bottom: 12px;
+        }
+        #panel {
+          top: 68px;
+        }
+        #notice {
+          top: 70px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="scene" aria-label="Begehbarer Weltenwald"></canvas>
+    <header>
+      <div>
+        <a href="./index.html">← Tree Lab</a>
+        <h1 id="title">Weltenwald</h1>
+      </div>
+      <button id="menu" aria-expanded="false" aria-controls="panel">
+        Feldbuch ☰
+      </button>
+    </header>
+    <aside id="panel" hidden>
+      <h2>Feldbuch</h2>
+      <label>Expedition<select id="region"></select></label>
+      <label
+        >Welten-Seed<input
+          type="number"
+          id="seed"
+          min="0"
+          max="2147483647"
+          step="1"
+          value="1847"
+      /></label>
+      <label
+        >Qualität<select id="quality">
+          <option>Mobil</option>
+          <option>Ausgewogen</option>
+          <option>Weitsicht</option>
+        </select></label
+      >
+      <label
+        >Sichtringe <output id="ringsOut"></output
+        ><input id="rings" type="range" min="1" max="4" step="1"
+      /></label>
+      <label
+        >Bewuchsdichte <output id="densityOut"></output
+        ><input id="density" type="range" min="30" max="125" step="5"
+      /></label>
+      <label
+        >Renderfaktor <output id="scaleOut"></output
+        ><input id="scale" type="range" min="0.5" max="1.5" step="0.05"
+      /></label>
+      <label
+        >Renderfaktor automatisch anpassen<input
+          type="checkbox"
+          id="adaptive"
+          checked
+      /></label>
+      <label
+        >Riesenbosse anzeigen<input type="checkbox" id="bosses" checked
+      /></label>
+      <details id="catalog">
+        <summary>Asset-Katalog · <span id="total"></span></summary>
+        <label>Gruppe<select id="layer"></select></label>
+        <div id="entries"></div>
+      </details>
+    </aside>
+    <button id="return" hidden>← Zur Expedition</button>
+    <div id="notice" role="status">Wald wird aufgebaut …</div>
+    <div class="telemetry" id="stats"></div>
+    <div id="guide"></div>
+    <div class="pad" id="pad" aria-label="Bewegen">✥</div>
+    <script type="module">
+      import("./expedition.js").catch((error) => {
+        document.querySelector("#notice").textContent =
+          "Weltenwald konnte nicht starten: " + error.message;
+      });
+    </script>
+  </body>
+</html>
