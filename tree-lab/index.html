@@ -1412,7 +1412,7 @@
             cs = [],
             ix = [],
             r = rand(310 + band),
-            rad = 78 + band * 30;
+            rad = 130 + band * 18;
           for (let i = 0; i <= n; i++) {
             let a = (i / n) * TAU,
               y =
@@ -1457,10 +1457,10 @@
             batch = new T.InstancedMesh(far.geo, far.mat, 34);
           for (let i = 0; i < 34; i++) {
             let a = back() * TAU,
-              dist = 37 + back() * 33 + 10 * Math.sin(3 * a);
+              dist = 106 + back() * 13 + 4 * Math.sin(3 * a);
             o.position.set(Math.cos(a) * dist, -0.2, Math.sin(a) * dist);
             o.rotation.set(0, back() * TAU, 0);
-            o.scale.setScalar(0.39 + back() * 0.46);
+            o.scale.setScalar(0.72 + back() * 0.55);
             o.updateMatrix();
             batch.setMatrixAt(i, o.matrix);
             const shade = 0.72 + back() * 0.2;
@@ -1475,7 +1475,7 @@
       for (const [y, r, h] of [
         [1.62, 0.13, 0.26],
         [1.17, 0.18, 0.62],
-        [0.48, 0.102, 0.91],
+
       ]) {
         let m = new T.Mesh(
           h === 0.26
@@ -1485,6 +1485,12 @@
         );
         m.position.y = y;
         scale.add(m);
+      }
+      for (const side of [-1, 1]) {
+        for (const [x,y,length,radius,lean] of [[.095,.45,.9,.074,0],[.225,1.17,.57,.053,.12]]) {
+          const limb=new T.Mesh(new T.CylinderGeometry(radius,radius*.78,length,8),sm);
+          limb.position.set(x*side,y,0); limb.rotation.z=lean*side; scale.add(limb);
+        }
       }
       scale.position.set(2, land(2, 0.5), 0.5);
       clearing.add(scale);
