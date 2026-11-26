@@ -84,3 +84,7 @@ Real Android playtest; camera and movement tuning from device feedback; asset ma
 ## Tree Lab specimen renderers
 
 The standalone `tree-lab/` inspector compares the seeded branch mesh with a surface-net mesh of the trunk and roots or a procedural Gaussian canopy. SDF grid size and Gaussian radius are adjustable. Copper autumn and Woodcut apply to specimens and forest trees. The forest retains its instanced LOD renderer.
+
+## Weltenwald · Tree Lab expedition
+
+The Weltenwald route at `tree-lab/expedition.html` streams a local forest on a sphere of radius 6,371 km. World positions use double precision and rendering uses local tangent coordinates. Three destinations expose 20 procedural species, ground covers and guardians with three mesh LODs and an interactive catalog. Active sectors use seeded placements, shared instanced geometry, layer-specific visibility, bounded generation work and optional adaptive render scale. Guardians turn to face a nearby player. This is a vegetation and encounter staging prototype. Combat, resource persistence and multiplayer remain outside this increment.
