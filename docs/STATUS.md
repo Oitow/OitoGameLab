@@ -80,3 +80,7 @@ Collisions are static X/Z footprints, not rigid-body physics. No landing on obst
 ## Next
 
 Real Android playtest; camera and movement tuning from device feedback; asset manifest and GLB loading; a larger mechanics-focused game using the shared systems.
+
+## Tree Lab specimen renderers
+
+The standalone `tree-lab/` inspector compares the seeded branch mesh with a surface-net mesh of the trunk and roots or a procedural Gaussian canopy. SDF grid size and Gaussian radius are adjustable. Copper autumn and Woodcut apply to specimens and forest trees. The forest retains its instanced LOD renderer.
